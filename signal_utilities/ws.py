@@ -1,6 +1,6 @@
 #!/usr/bin/python -tt
 import numpy as np
-class WS(Object):
+class WS(object):
     """
     WS class for storing and retreiving and performing operations on wavelet subbands. 
     """
@@ -12,6 +12,6 @@ class WS(Object):
         self.ary_scaling = ary_scaling
         self.tup_coeffs = tup_coeffs
         self.ary_size = np.dot(2,ary_scaling.shape) 
-        self.int_levels = len(Yh)
+        self.int_levels = len(tup_coeffs)
         self.int_dimension = ary_scaling.ndim
-        self.int_orientations = Yh[0].shape[-1]
+        self.int_orientations = tup_coeffs[0].shape[-1]
