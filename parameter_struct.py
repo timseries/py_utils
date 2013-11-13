@@ -1,6 +1,6 @@
 #!/usr/bin/python -tt
 import ConfigParser
-class ParametrStruct(object):
+class ParameterStruct(object):
     """
     Base class for defining other classes which inherit properties from a config.
     """
@@ -13,7 +13,9 @@ class ParametrStruct(object):
         self.config.read(str_file_path)
         self.str_file_path = str_file_path
         
-    def write(self,str_file_path=self.str_file_path):
+    def write(self,str_file_path=None):
+        if str_file_path == None:
+            str_file_path = self.str_file_path
         file = open(str_file_path)
         self.config.write(file)
         file.close()
