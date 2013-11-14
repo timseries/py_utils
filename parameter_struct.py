@@ -29,3 +29,4 @@ class ParameterStruct(object):
                 
     def get_section_dict(self,str_section):
         return self.config._sections[str_section]
+

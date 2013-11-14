@@ -31,14 +31,31 @@ class Section(object):
         ls_subsections = self.get_subsection_strings(str_key)
         return [Section(self.ps_parameters,str_section) for str_section in ls_subsections]
 
-    def get_val(self,str_key,lgc_val_numeric=0):
+    def get_val(self,str_key,lgc_val_numeric=False):
         """
-        Returns the value corresponding to str_key in this section, with defaults.
+        Returns the value corresponding to a key in this section, with defaults. 
+
+        :param str_key: key to look up in this section
+        :param lgc_val_numeric: boolean, output should be numeric (true) or string (false)
+
+        :returns val: Either a string, a numeric value (float or int, depending), \
+        or a list of ints.
         """       
         if lgc_val_numeric:
             val = 0
         else:
             val = ''
         if self.dict_section.has_key(str_key):
-            val = self.dict_section[str_key]
+            val = self.ps_parameters.config.get(self.str_section,str_key).strip()
+            if lgc_val_numeric:
+                #test for numeric arrays separated by a space
+                if ' ' in val: 
+                    val=[int(val.split()[i]) for i in range(len(val.split()))]
+                else:
+                    val1 = self.ps_parameters.config.getfloat(self.str_section,str_key)
+                    val2 = self.ps_parameters.config.getint(self.str_section,str_key)
+                    if val1 == val2:
+                        val = val2
+                    else:
+                        val = val1    
         return val
