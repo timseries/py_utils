@@ -9,9 +9,20 @@ def nd_impulse(ary_size):
     ary_impulse[tuple(np.array(ary_impulse.shape)/2)] = 1
     return ary_impulse
 
-def spectral_radius():
-    
+def spectral_radius(op_transform, op_modality):
+    """Compute the specral radius including crossband energy
+    :param op_transform: a transform operator which returns a ws object
+    :param op_modality: some linear operator
 
+    :returns ary_lambda_alpha, a vector of subband weights which upperbounds the spectral radius
+    
+    .. codeauthor:: Timothy Roberts <timothy.daniel.roberts@gmail.com>, 2013
+    """
+    ary_impulse = nd_impulse(op_transform.ary_size)
+    ws_w = op_transform * ary_impulse
+    for int_subband in np.arange(ws_w.int_subbands):
+        np.fftn(~op_transform * ws_w.suppress_other_subbands(int_subband))
+    
 def circshift(ary_input, tup_shifts):
     """Shift array circularly.
   
