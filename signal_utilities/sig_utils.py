@@ -4,7 +4,7 @@ a collection of signal/matrix utility functions
 """
 from operator import add
 import numpy as np
-from numpy import max, absolute
+from numpy import max as nmax, absolute, conj
 import itertools
 
 def nd_impulse(ary_size):
@@ -23,34 +23,31 @@ def spectral_radius(op_transform, op_modality):
     .. codeauthor:: Timothy Roberts <timothy.daniel.roberts@gmail.com>, 2013
     """
     ary_impulse = nd_impulse(op_transform.ary_size)
-    ls_sp = []
-    ls_sp_conj = []
     ws_w = op_transform * ary_impulse
     ary_alpha = np.zeros(ws_w.int_subbands)
-    ary_ms = op_modality.get_spectrum
-    ary_ms_conj = np.conj(ary_ms)
+    ary_ms = op_modality.get_spectrum.flatten
     ary_subbands = np.arange(ws_w.int_subbands)
+    ary_ss = np.array #subband spectrum
+    ary_ss.shape = (ary_ms.shape[0],int_subbands)
+    ary_alpha = np.zeros(int_subbands,)
     #store the inband psd's (and conjugate)
-    for int_subband in ary_subbands:
-        ary_subband_spectrum = np.fftn(~op_transform * \
-                                          ws_w.suppress_other_subbands(int_subband))
-        ls_sp.append(ary_ms * ls_subband_spectra[int_subband])
-        ls_sp_conj.append(ary_ms_conj *ls_subband_spectra[int_subband])
+    for s in ary_subbands:
+        ary_ss[:,s] = np.fftn(~op_transform * ws_w.suppress_other_subbands(s)).flatten
     #compute the inband and crossband psd maxima
-    ls_ic = np.array([max(absolute(ls_sp[int_j] * ls_sp[int_n])) for \
-                      int_j in ary_subbands for int_n in ary_subbands])
-    ary_alpha = np.array([reduce(add,ls_ic[i:i+ary_subbands[-1]]) for \
-                          i in (ary_subbands*ary_subbands[-1]+1)])
+    for s in ary_subbands:
+        for c in ary_subbands:
+             ary_alpha[s] = ary_alpha[s] + nmax(absolute(conj(ary_ms * ary_ss[s]) * \
+                                                         ary_ms * ary_ss[c]))
     #return the alpha array, upper-bounded to 1                      
     return np.minimum(ary_alpha,1)
 
 def circshift(ary_input, tup_shifts):
-    """Shift array circularly.
+    """Shift multi-dimensional array circularly.
   
     Circularly shifts the values in the array `a` by `s`
     elements. Return a copy.
   
-    Parameters!23Gamma
+    Parameters
     
     ary_input : ndarray to shift.
   
