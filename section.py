@@ -11,6 +11,7 @@ class Section(object):
         """       
         self.ps_parameters = ps_parameters
         self.str_section = str_section
+        
         self.str_object_name = ps_parameters.get_section_dict(str_section)['name']
         str_class_name = self.__class__.__name__
         if self.str_object_name!=str_class_name and str_class_name!='Section':
@@ -58,4 +59,11 @@ class Section(object):
                         val = val2
                     else:
                         val = val1    
+            else:
+                if ',' in val:
+                    val=val.split(',')
         return val
+
+    class Factory:
+        def create(self,ps_parameters,str_section):
+            return Section(ps_parameters,str_section)

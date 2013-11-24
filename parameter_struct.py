@@ -11,6 +11,8 @@ class ParameterStruct(object):
         """       
         self.config = ConfigParser.ConfigParser(allow_no_value=True)
         self.config.read(str_file_path)
+        if self.config.sections()==[]:
+            raise Exception("file empty or non-existent")    
         self.str_file_path = str_file_path
         
     def write(self,str_file_path=None):

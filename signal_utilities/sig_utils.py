@@ -1,7 +1,4 @@
 #!/usr/bin/python -tt
-"""
-a collection of signal/matrix utility functions
-"""
 from operator import add
 import numpy as np
 from numpy import max as nmax, absolute, conj
@@ -36,8 +33,7 @@ def spectral_radius(op_transform, op_modality):
     #compute the inband and crossband psd maxima
     for s in ary_subbands:
         for c in ary_subbands:
-             ary_alpha[s] = ary_alpha[s] + nmax(absolute(conj(ary_ms * ary_ss[s]) * \
-                                                         ary_ms * ary_ss[c]))
+             ary_alpha[s] += nmax(absolute(conj(ary_ms * ary_ss[s]) * ary_ms * ary_ss[c]))
     #return the alpha array, upper-bounded to 1                      
     return np.minimum(ary_alpha,1)
 
