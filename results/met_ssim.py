@@ -25,8 +25,15 @@ class SSIM(Metric):
         """       
         super(SSIM,self).__init__(ps_parameters,str_section)
         self.x = None #ground truth
-        self.K = np.array([.01, .03]);
-        
+        self.K = self.get_val('k',True)
+        if np.all(self.K == np.zeros(2)):
+            self.K = np.array([.01, .03])
+        self.gaussian_kernel_sigma == self.get_val('gaussian_kernel_sigma',True) 
+        if self.gaussian_kernel_sigma == 0:
+            self.gaussian_kernel_sigma = 1.5
+        self.gaussian_kernel_width == self.get_val('gaussian_kernel_width',True)
+        if self.gaussian_kernel_width == 0:
+            self.gaussian_kernel_width = 11
     def update(self,dict_in):
         if self.data == []:
             self.x = dict_in['x'].flatten()
@@ -58,44 +65,50 @@ class SSIM(Metric):
         result = scipy.ndimage.filters.correlate1d(result, gaussian_kernel_1d, axis = 1)
         return result
 
-    def compute_ssim_3d(self,im1, im2, gaussian_kernel_sigma=1.5, gaussian_kernel_width=11):
+    def compute_ssim_3d(self,im1, im2):
         if im1.shape != im2.shape:
             raise Exception('comparison volumes unequal dimensions')
         else:
             ssim_mean = 0
             ssim_min = np.inf
             for i in im1.shape[2]:
-                ssim = self.compute_ssim(im1,im2,gaussian_kernel_sigma,gaussian_kernel_width)
+                ssim = self.compute_ssim(im1,im2,self.gaussian_kernel_sigma,self.gaussian_kernel_width)
                 ssim_mean += ssim
                 ssim_min = np.min([ssim_min,ssim])
             ssim_mean = ssim_mean / im1.shape[2]
         return ssim_mean, ssim_min
                 
-    def compute_ssim(self,im1, im2, gaussian_kernel_sigma=1.5, gaussian_kernel_width=11):
+    def compute_ssim(self,im1, im2):
         """
         The function to compute SSIM
-        @param im1: PIL Image object
-        @param im2: PIL Image object
+        @param im1: PIL Image object, or grayscale ndarray
+        @param im2: PIL Image object, or grayscale ndarray
         @return: SSIM float value
         """
     
         # 1D Gaussian kernel definition
-        gaussian_kernel_1d = numpy.ndarray((gaussian_kernel_width))
-        mu = int(gaussian_kernel_width / 2)
+        gaussian_kernel_1d = numpy.ndarray((self.gaussian_kernel_width))
+        mu = int(self.gaussian_kernel_width / 2)
         
         #Fill Gaussian kernel
-        for i in xrange(gaussian_kernel_width):
-            gaussian_kernel_1d[i] = (1 / (sqrt(2 * pi) * (gaussian_kernel_sigma))) * \
-              exp(-(((i - mu) ** 2)) / (2 * (gaussian_kernel_sigma ** 2)))
+        for i in xrange(self.gaussian_kernel_width):
+            gaussian_kernel_1d[i] = (1 / (sqrt(2 * pi) * (self.gaussian_kernel_sigma))) * \
+              exp(-(((i - mu) ** 2)) / (2 * (self.gaussian_kernel_sigma ** 2)))
 
         # convert the images to grayscale
-        img_mat_1, img_alpha_1 = _to_grayscale(im1)
-        img_mat_2, img_alpha_2 = _to_grayscale(im2)
-    
-        # don't count pixels where both images are both fully transparent
-        if img_alpha_1 is not None and img_alpha_2 is not None:
-            img_mat_1[img_alpha_1 == 255] = 0
-            img_mat_2[img_alpha_2 == 255] = 0
+        if im1.__class__.__name__ == 'Image':
+            img_mat_1, img_alpha_1 = _to_grayscale(im1)
+            # don't count pixels where both images are both fully transparent
+            if img_alpha_1 is not None:
+                img_mat_1[img_alpha_1 == 255] = 0
+        else:
+            img_mat_1 = im1
+        if im2.__class__.__name__ == 'Image':    
+            img_mat_2, img_alpha_2 = _to_grayscale(im2)
+            if img_alpha_2 is not None:
+                img_mat_2[img_alpha_2 == 255] = 0
+        else:
+            img_mat_2 = im2
       
         #Squares of input matrices
         img_mat_1_sq = img_mat_1 ** 2
@@ -125,11 +138,11 @@ class SSIM(Metric):
         
         #set k1,k2 & c1,c2 to depend on L (width of color map)
         #l = 255
-        l = np.max(im2.flatten())-np.min(im2.flatten())
-        k_1 = 0.01
-        c_1 = (k_1 * l) ** 2
-        k_2 = 0.03
-        c_2 = (k_2 * l) ** 2
+        L = np.max(img_mat_2.flatten())-np.min(img_mat_2.flatten())
+        k_1 = self.K[0]
+        c_1 = (k_1 * L) ** 2
+        k_2 = self.K[1]
+        c_2 = (k_2 * L) ** 2
       
         #Numerator of SSIM
         num_ssim = (2 * img_mat_mu_12 + c_1) * (2 * img_mat_sigma_12 + c_2)

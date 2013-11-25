@@ -1,28 +1,35 @@
 #!/usr/bin/python -tt
-from numpy import log10
-from numpy.linalg import norm
 from py_utils.results.metric import Metric
-class ISNR(Metric):
+import numpy
+from numpy import mean
+class NMISE(Metric):
     """
-    Base class for defining a metric
+    NMISE metric class, for storing a single number vs iteration.
     """
     
     def __init__(self,ps_parameters,str_section):
         """
         Class constructor for ISNR.
         """       
-        super(ISNR,self).__init__(ps_parameters,str_section)
+        super(NMISE,self).__init__(ps_parameters,str_section)        
         self.y = None #observation
         self.x = None #ground truth
-        
+
     def update(self,dict_in):
+        """
+        Expects a single value or array. If array, store the whole vector and stop.
+        """
+
         if self.data == []:
             self.y = dict_in['y'].flatten()
             self.x = dict_in['x'].flatten()
         x_n = dict_in['x_n'].flatten()
-        value = 10 * log10((norm(self.y - self.x,2)**2)/(norm(x_n - self.x,2)**2))
+        if y.shape != x.shape or x_n.shape != x.shape:
+            raise Exception ("unequal array sizes")
+        else:
+            value = mean(((x_n - x)**2) / y)
         self.data.append(value)
-         
+            
     class Factory:
         def create(self,ps_parameters,str_section):
-            return ISNR(ps_parameters,str_section)
+            return NMISE(ps_parameters,str_section)
