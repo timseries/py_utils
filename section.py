@@ -1,5 +1,6 @@
 #!/usr/bin/python -tt
 from py_utils import parameter_struct
+from numpy import array
 class Section(object):
     """
     Base class for defining other classes which inherit properties from a config.
@@ -15,7 +16,7 @@ class Section(object):
         self.str_object_name = ps_parameters.get_section_dict(str_section)['name']
         str_class_name = self.__class__.__name__
         if self.str_object_name!=str_class_name and str_class_name!='Section':
-            raise Exception("section class name doesnt match class spec" + \
+            raise Exception("section class name doesnt match object class name " + \
                             self.str_object_name + '!=' + str_class_name)
         self.dict_section = self.get_section_dict()
         
@@ -51,10 +52,14 @@ class Section(object):
             if lgc_val_numeric:
                 #test for numeric arrays separated by a space
                 if ' ' in val: 
-                    val=[int(val.split()[i]) for i in range(len(val.split()))]
+                    val=array([int(val.split()[i]) for i in range(len(val.split()))])
                 else:
                     val1 = self.ps_parameters.config.getfloat(self.str_section,str_key)
-                    val2 = self.ps_parameters.config.getint(self.str_section,str_key)
+                    try:
+                        val2 = self.ps_parameters.config.getint(self.str_section,str_key)
+                    except ValueError:
+                        val2 = val1
+                    
                     if val1 == val2:
                         val = val2
                     else:

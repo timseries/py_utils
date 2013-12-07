@@ -1,4 +1,5 @@
 #!/usr/bin/python -tt
+from py_utils.section import Section
 from py_utils.results.metric import Metric
 import numpy as np
 from numpy import arange, floor, meshgrid as mg, asarray, sqrt, nonzero as nz
@@ -17,7 +18,7 @@ class FMetrics(Section):
         self.x_f = None #ground truth dft
         self.K = self.get_val('k',True)
         self.epsilon = self.get_val('epsilon',True)
-        if self.epsilon == 0
+        if self.epsilon == 0:
             self.epsilon = 1e-5
         self.s_indices = None #a list of 1D arrays
         self.weights = None #corresponding list number of elements

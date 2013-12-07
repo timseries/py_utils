@@ -1,9 +1,7 @@
 #!/usr/bin/python -tt
 from __future__ import generators
-import py_operators
-from py_solvers import *
-from  py_utils import *
-from  py_utils.results import *
+from py_utils import *
+import py_utils.results
 
 class SectionFactory(object):
     """
@@ -16,6 +14,11 @@ class SectionFactory(object):
     add_factory = staticmethod(add_factory)
     
     def create_section(ps_parameters,str_section):
+        from py_utils import *
+        from py_utils.results.results import *
+        from py_utils.results import *
+        from py_solvers import MSIST
+        from py_operators import *
         str_id = ps_parameters.get_section_dict(str_section)['name']
         if not SectionFactory.factories.has_key(str_id):
             SectionFactory.factories[str_id] = \

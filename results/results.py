@@ -81,8 +81,8 @@ class Results(Section):
         Plot the metrics
         """       
         for metric in self.ls_metrics:
-            metric.display()
-        plt.show()    
+            metric.plot()
+        plt.show()
 
     class Factory:
         def create(self,ps_parameters,str_section):

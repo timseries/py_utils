@@ -1,9 +1,9 @@
 #!/usr/bin/python -tt
 from py_utils.results.metric import Metric
 import numpy as np
-from numpy import nsum
+from numpy import sum as nsum
 import fmetrics as fm
-from numpy.fft import conj
+from numpy import conj
 class RER(Metric):
     """
     RER metric class.

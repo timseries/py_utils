@@ -1,5 +1,7 @@
 #!/usr/bin/python -tt
 import ConfigParser
+import os
+
 class ParameterStruct(object):
     """
     Base class for defining other classes which inherit properties from a config.
@@ -11,9 +13,10 @@ class ParameterStruct(object):
         """       
         self.config = ConfigParser.ConfigParser(allow_no_value=True)
         self.config.read(str_file_path)
-        if self.config.sections()==[]:
+        if self.config.sections() == []:
             raise Exception("file empty or non-existent")    
         self.str_file_path = str_file_path
+        self.str_file_dir = os.path.dirname(os.path.realpath(str_file_path))
         
     def write(self,str_file_path=None):
         if str_file_path == None:

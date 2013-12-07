@@ -39,22 +39,21 @@ class WS(object):
         if int_subband_index == 0:
             ary_scaling = np.zeros(self.ary_scaling.shape)
         else:
-            int_subband_index = int_subband_index - 1
-            int_level_s, int_orientation_s = lev_ori_from_subband(int_subband_index)
-        for int_level in np.arange(self.int_levels):
-            for int_subband in np.aragne(self.int_subbands):
-                if not (int_level == int_level_s and int_subband == int_orientation_s):
-                    tup_coeffs[int_level][(Ellipsis,int_subband)] = 0
+            int_level_s, int_orientation_s = self.lev_ori_from_subband(int_subband_index)
+            for int_level in np.arange(self.int_levels):
+                for int_orientation in np.arange(self.int_orientations):
+                    if not (int_level == int_level_s and int_orientation == int_orientation_s):
+                        tup_coeffs[int_level][(Ellipsis,int_orientation)] = 0
         return WS(ary_scaling,tup_coeffs)
 
     def get_subband(self,int_subband_index):
         """
         For a given subband index, returns the corresponding subband as ndarray
         """        
-        int_level, int_orientation = lev_ori_from_subband(int_subband_index)
+        int_level, int_orientation = self.lev_ori_from_subband(int_subband_index)
         return self.tup_coeffs[int_level][(Ellipsis,int_subband)]
     
     def set_subband(self,int_subband_index,value):    
-        int_level, int_orientation = lev_ori_from_subband(int_subband_index)
+        int_level, int_orientation = self.lev_ori_from_subband(int_subband_index)
         self.tup_coeffs[int_level][(Ellipsis,int_subband)] = value
         

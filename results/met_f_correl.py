@@ -1,10 +1,10 @@
 #!/usr/bin/python -tt
 from py_utils.results.metric import Metric
 import numpy as np
-from numpy import nsum, norm
+from numpy.linalg import norm
 import fmetrics as fm
-from numpy.fft import conj
-class FourrierCorrelation(Metric):
+from numpy import conj
+class FourierCorrelation(Metric):
     """
     Computes the fourier ring/shell correlation
     """
