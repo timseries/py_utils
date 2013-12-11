@@ -1,5 +1,5 @@
 #!/usr/bin/python -tt
-from numpy import arange
+from numpy import arange, array
 from py_utils.section import Section
 import matplotlib
 import matplotlib.pyplot as plt
@@ -20,11 +20,16 @@ class Metric(Section):
         self.data = []
         self.ylabel = self.get_val('ylabel',False)
         self.title = self.get_val('title',False)
+        self.print_values = self.get_val('print',True)
         
     def plot(self):
         plt.figure(self.figure_number)
-        plt.plot(np.array(self.data))
+        plt.plot(array(self.data))
 
+    def update(self):
+        if self.print_values:
+            print self.data[-1]  
+        
     class Factory:
         def create(self,ps_parameters,str_section):
             return Metric(ps_parameters,str_section)

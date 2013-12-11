@@ -17,7 +17,7 @@ class Scalar(Metric):
         Expects a single value or array. If array, store the whole vector and stop.
         """
         if not self.lgc_stop:
-            value = dict_in[self.get_val('tag',False)]
+            value = dict_in[self.get_val('key',False)]
             if value.shape[0] > 1:
                 self.data = value
                 self.lgc_stop = True

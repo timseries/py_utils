@@ -23,6 +23,8 @@ class Results(Section):
         """       
         super(Results,self).__init__(ps_parameters,str_section)
         self.ls_metric_names = self.get_val('metrics',False)
+        if self.ls_metric_names.__class__.__name__ == 'str':
+            self.ls_metric_names = [self.ls_metric_names]
         self.ls_metrics = [sf.create_section(ps_parameters, self.ls_metric_names[i]) \
                            for i in arange(len(self.ls_metric_names))]
         self.grid_size = aa([self.get_val('figuregridwidth',True), \

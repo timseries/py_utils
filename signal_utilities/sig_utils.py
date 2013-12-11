@@ -27,17 +27,19 @@ def spectral_radius(op_transform, op_modality, tup_size):
     ary_temp = op_modality * ary_impulse # unused result, just to initialize with correct size
     ary_ms = (op_modality.get_spectrum()).flatten()
     ary_subbands = arange(ws_w.int_subbands)
-    ary_ss = zeros([ary_ms.shape[0],ws_w.int_subbands])
+    ary_ss = zeros([ary_ms.shape[0],ws_w.int_subbands],dtype='complex64')
     ary_alpha = zeros(ws_w.int_subbands,)
     #store the inband psd's (and conjugate)
     for s in ary_subbands:
-        ary_ss[:,s] = fftn(~op_transform * ws_w.suppress_other_subbands(s)).flatten()
+        ary_ss[:,s] = fftn(~op_transform * ws_w.one_subband(s)).flatten()
     #compute the inband and crossband psd maxima
     for s in ary_subbands:
         for c in ary_subbands:
-             ary_alpha[s] += nmax(absolute(conj(ary_ms * ary_ss[s]) * ary_ms * ary_ss[c]))
+             ary_alpha[s] += nmax(absolute(conj(ary_ms * ary_ss[:,s]) * ary_ms * ary_ss[:,c]))
     #return the alpha array, upper-bounded to 1                      
-    return np.minimum(ary_alpha,1)
+    ary_alpha = np.minimum(ary_alpha,1)
+    print ary_alpha
+    return ary_alpha
 
 def circshift(ary_input, tup_shifts):
     """Shift multi-dimensional array circularly.
@@ -104,6 +106,7 @@ def noise_gen(noise_params):
 
     #set the seed, always set the seed!
     seed(int_seed)
+    print int_seed
     if noise_params['distribution'] == 'gaussian':
         ary_noise = normal(dbl_mean, np.sqrt(dbl_variance), tup_size)
     elif noise_params['distribution'] == 'uniform':

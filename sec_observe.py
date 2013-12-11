@@ -1,6 +1,7 @@
 #!/usr/bin/python -tt
 from py_utils.section import Section
-from numpy import max as nmax, conj
+from numpy import max as nmax, conj, mean, log10
+from numpy.linalg import norm
 from numpy.fft import fftn, ifftn
 from py_operators.operator_comp import OperatorComp
 
@@ -27,7 +28,7 @@ class Observe(Section):
         """
         if self.str_observation_type == 'convolution':
             str_domain = self.get_val('domain',False)
-            dbl_wrf = nmax(self.get_val('wienerfactor',True),0.001)
+            wrf = nmax(self.get_val('wienerfactor',True),0.001)
             H = self.H
             noise_pars = {}
             noise_pars['seed'] = self.get_val('seed',True)
@@ -36,15 +37,20 @@ class Observe(Section):
             noise_pars['mean'] = self.get_val('noisemean',True)
             noise_pars['interval'] = self.get_val('noiseinterval',True)#uniform
             noise_pars['size'] = dict_in['x'].shape
-            if str_domain == 'Fourier':
+            if str_domain == 'fourier':
                 dict_in['n'] = fftn(noise_gen(noise_pars))
-                dict_in['yhat'] = H * dict_in['x'] + dict_in['n']
+                dict_in['Hxhat'] = H * dict_in['x']
+                dict_in['Hx'] = ifftn(dict_in['Hxhat'])
+                dict_in['yhat'] = dict_in['Hxhat'] + dict_in['n']
                 dict_in['y'] = ifftn(dict_in['yhat'])
                 #inverse filtering in fourier domain
-                dict_in['x_0'] = ifftn(~H * dict_in['y']) / \
-                  (conj(H.get_spectrum()) * H.get_spectrum() + dbl_wrf * noise_pars['variance'])
+                dict_in['x_0'] = ifftn((~H * dict_in['y']) / \
+                  (conj(H.get_spectrum()) * H.get_spectrum() + wrf * noise_pars['variance']))
             else:
                 raise Exception('spatial domain convolution not supported')    
+            dict_in['bsnr'] = 10 * log10(norm(dict_in['Hx'].flatten() - mean(dict_in['Hx'].flatten()),ord=2)**2 / \
+                                         (dict_in['Hx'].size * noise_pars['variance']))
+            print 'made blurry observation with BSNR: ' + str(dict_in['bsnr'])
         elif self.str_observation_type == 'compressedsensing':
             raise Exception('cs observation not supported yet')    
         else:

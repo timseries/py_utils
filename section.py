@@ -52,7 +52,10 @@ class Section(object):
             if lgc_val_numeric:
                 #test for numeric arrays separated by a space
                 if ' ' in val: 
-                    val=array([int(val.split()[i]) for i in range(len(val.split()))])
+                    try: 
+                        val=array([int(val.split()[i]) for i in range(len(val.split()))])
+                    except ValueError:
+                        val=array([float(val.split()[i]) for i in range(len(val.split()))])
                 else:
                     val1 = self.ps_parameters.config.getfloat(self.str_section,str_key)
                     try:
