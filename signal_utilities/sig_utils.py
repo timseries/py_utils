@@ -117,18 +117,16 @@ def noise_gen(noise_params):
         raise Exception('unsupported noise distribution: ' + noise_params['distribution'])
     return ary_noise
 
-def colonvec(self, ary_small, ary_large):
+def colonvec(ary_small, ary_large):
     """
     Compute the indices used to pad/crop the results of applying the fft with augmented dimensions
     """
-    ary_max = np.maximum(ary_small.shape,ary_large.shape)
-    if ary_small.ndim == 1:
-        ary_small = ary_small * np.ones(ary_max)
-    elif ary_large.ndim == 1:         
-        ary_large = ary_large * np.ones(ary_max)
-    else:
-        raise Exception("unsupported boundary case")    
-    return str(tuple([list(np.arange(ary_small[i],ary_large[i])) for i in np.arange(ary_max.ndim)]))
+    int_max = np.maximum(len(ary_small),len(ary_large))
+    #print ary_small
+    #print ary_large
+    retval = tuple([list(np.arange(ary_small[i]-1,ary_large[i],dtype='uint16')) for i in np.arange(int_max)])
+    #print retval
+    return retval
 
 
 def crop(ary_signal, tup_crop_size):

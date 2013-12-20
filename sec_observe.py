@@ -4,8 +4,10 @@ from numpy import max as nmax, conj, mean, log10
 from numpy.linalg import norm
 from numpy.fft import fftn, ifftn
 from py_operators.operator_comp import OperatorComp
+import warnings
+import numpy as np
 
-from py_utils.signal_utilities.sig_utils import noise_gen
+from py_utils.signal_utilities.sig_utils import noise_gen, crop
 
 class Observe(Section):
     """
@@ -26,9 +28,11 @@ class Observe(Section):
         Append an input dictionary object (dict_in) with the measurment variables
         Provides observation from ground truth, and initial estimate x_0
         """
+        warnings.simplefilter("ignore",np.ComplexWarning)
         if self.str_observation_type == 'convolution' or \
           self.str_observation_type == 'convolution_poisson':
             H = self.H
+            wrf = nmax(self.get_val('wienerfactor',True),0.001)
             str_domain = self.get_val('domain',False)
             noise_pars = {}
             noise_pars['seed'] = self.get_val('seed',True)
@@ -40,7 +44,6 @@ class Observe(Section):
             dict_in['n'] = noise_gen(noise_pars)
             dict_in['nhat'] = fftn(noise_gen(noise_pars))
         if self.str_observation_type == 'convolution':
-            wrf = nmax(self.get_val('wienerfactor',True),0.001)
             if str_domain == 'fourier':
                 dict_in['Hxhat'] = H * dict_in['x']
                 dict_in['Hx'] = ifftn(dict_in['Hxhat'])
@@ -55,23 +58,23 @@ class Observe(Section):
                                          (dict_in['Hx'].size * noise_pars['variance']))
             print 'made blurry observation with BSNR: ' + str(dict_in['bsnr'])
         elif self.str_observation_type == 'convolution_poisson':
-            dict_in['mp'] = self.get_val('maximum_photos_per_voxel', True)
-            dict_in['b'] = self.get_val('background', False)
-            noise_pars = {}
-            noise_pars['seed'] = self.get_val('seed',True)
+            dict_in['mp'] = self.get_val('maximumphotonspervoxel', True)
+            dict_in['b'] = self.get_val('background', True)
             if str_domain == 'fourier':
                 dict_in['Hxhat'] = H * dict_in['x']
-                dict_in['Hx'] = ifftn(dict_in['Hxhat'])
+                dict_in['Hx'] = ifftn(dict_in['Hxhat']).astype(dtype='float64')
                 k = dict_in['mp'] / nmax(dict_in['Hx'])
                 dict_in['r'] = k * dict_in['Hx']
                 dict_in['f'] = k * dict_in['x']
                 dict_in['fb'] = dict_in['r'] + dict_in['b']
                 dict_in['x'] = crop(dict_in['x'],dict_in['r'].shape)
                 noise_pars['ary_mean'] = dict_in['fb']
+                noise_pars['distribution'] = self.get_val('noisedistribution2',False)
                 dict_in['y'] = noise_gen(noise_pars).astype(dtype='uint16').astype(dtype='int32')
                 #inverse filtering in fourier domain
-                dict_in['x_0'] = ifftn((~H * dict_in['y']) / \
-                  (conj(H.get_spectrum()) * H.get_spectrum() + wrf * noise_pars['variance']))
+                print '~H * y size'
+                print (~H * dict_in['y']).shape
+                dict_in['x_0'] = ifftn(~H * dict_in['y']).astype(dtype='float64')
             else:
                 raise Exception('spatial domain convolution not supported')    
             
@@ -79,8 +82,7 @@ class Observe(Section):
             raise Exception('cs observation not supported yet')    
         else:
             raise Exception('no observation type: ' + self.str_observation_type)    
-        
+
     class Factory:
         def create(self,ps_parameters,str_section):
-
             return Observe(ps_parameters,str_section)
