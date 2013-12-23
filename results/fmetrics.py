@@ -17,6 +17,8 @@ class FMetrics(Section):
         super(FMetrics,self).__init__(ps_parameters,str_section)        
         self.x_f = None #ground truth dft
         self.K = self.get_val('k',True)
+        if self.K == 0:
+            self.K = 64 #number of bins
         self.epsilon = self.get_val('epsilon',True)
         if self.epsilon == 0:
             self.epsilon = 1e-5
@@ -24,17 +26,24 @@ class FMetrics(Section):
         self.weights = None #corresponding list number of elements
         
     def compute_support(self, dict_in):
-        x_f = dict_in['x_f']
+        self.x_f = dict_in['x_f']
         int_dims = self.x_f.ndim
         ary_shape = self.x_f.shape
-        gridpts = mg(([ifftshift(ar(int(-(ary_shape[d]-1)/2),int((ary_shape[d]-1)/2))) \
-              for d in ar(int_dims)]))
-        for d in ar(int_dims):
+        gridpts = mg(*[ifftshift(arange(int(-(ary_shape[d]-1)/2.0),int((ary_shape[d]-1)/2.0))) \
+              for d in arange(int_dims)])
+        radius=0      
+        print 'gripts info'
+        print gridpts
+
+        for d in arange(int_dims):
             radius += (2 * gridpts[d] / ary_shape[d])**2
         radius = sqrt(radius)
-        self.s_indices = [nz(k/self.K-self.epsilon < radius & radius <= (k+1)/self.K) \
-                                  for k in arrange(K)]
-        self.weights = [len(self.s_indices[k]) for k in arange(K)]
+        print 'radius info'
+        print radius
+
+        self.s_indices = [nz((k/self.K-self.epsilon < radius) * (radius <= (k+1)/self.K)) \
+                                  for k in arange(self.K)]
+        self.weights = [len(self.s_indices[k]) for k in arange(self.K)]
                                   
     class Factory:
         def create(self,ps_parameters,str_section):

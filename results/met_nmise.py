@@ -24,12 +24,12 @@ class NMISE(Metric):
             self.y = dict_in['y'].flatten()
             self.x = dict_in['x'].flatten()
         x_n = dict_in['x_n'].flatten()
-        if y.shape != x.shape or x_n.shape != x.shape:
+        if self.y.shape != self.x.shape or x_n.shape != self.x.shape:
             raise Exception ("unequal array sizes")
         else:
-            value = mean(((x_n - x)**2) / y)
+            value = mean(((x_n - self.x)**2) / self.y)
         self.data.append(value)
-            
+        super(NMISE,self).update()    
     class Factory:
         def create(self,ps_parameters,str_section):
             return NMISE(ps_parameters,str_section)

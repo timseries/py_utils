@@ -5,13 +5,4 @@ from met_nmise import NMISE
 from met_f_correl import FourierCorrelation
 from met_psnr import PSNR
 from met_rer import RER
-
-__all__ = [
-    'Scalar',
-    'ISNR',
-    'SSIM',
-    'NMISE',
-    'FourierCorrelation',
-    'PSNR',
-    'RER'
-]
+from fmetrics import FMetrics

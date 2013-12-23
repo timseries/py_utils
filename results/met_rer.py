@@ -1,9 +1,11 @@
 #!/usr/bin/python -tt
 from py_utils.results.metric import Metric
 import numpy as np
-from numpy import sum as nsum
+from numpy import sum as nsum, arange
 import fmetrics as fm
 from numpy import conj
+from py_utils.section_factory import SectionFactory as sf
+
 class RER(Metric):
     """
     RER metric class.
@@ -15,7 +17,7 @@ class RER(Metric):
         """       
         super(RER,self).__init__(ps_parameters,str_section)        
         self.x_f = None #ground truth dft
-        self.fmetrics = fm.FMetrics(ps_parameters,str_section)
+        self.fmetrics = sf.create_section(ps_parameters, self.get_val('fmetrics',False))
         
     def update(self,dict_in):
         """
@@ -23,18 +25,19 @@ class RER(Metric):
         """
         if self.data == []:
             self.x_f = dict_in['x_f'].flatten()
-            self.fmetric.compute_support(dict_in)
+            self.fmetrics.compute_support(dict_in)
         x_n_f = dict_in['x_n_f'].flatten()
-        if x_n_f.shape != self.x.shape:
+        if x_n_f.shape != self.x_f.shape:
             raise Exception ("unequal array sizes")
         else:
             d_e_bar = self.x_f - x_n_f
             d_e_bar = conj(d_e_bar) * d_e_bar
             e_bar = conj(self.x_f) * self.x_f
-            Gk = [nsum(e_bar[self.fmetrics.s_sindices[k]]) for k in self.fmetrics.K]
-            value = tuple([(G[k] - nsum(d_e_bar[self.fmetrics.s_sindices[k]]))/G[k]\
-                           for k in self.fmetrics.K])
+            G = [nsum(np.take(e_bar,self.fmetrics.s_indices[k])) for k in arange(self.fmetrics.K)]
+            value = tuple([(G[k] - nsum(np.take(d_e_bar,self.fmetrics.s_indices[k])))/G[k] \
+                           for k in arange(self.fmetrics.K)])
             self.data.append(value)
+            super(RER,self).update()
             
     class Factory:
         def create(self,ps_parameters,str_section):

@@ -23,6 +23,7 @@ class Scalar(Metric):
                 self.lgc_stop = True
             else:                
                 self.data.append(value)
+            super(Scalar,self).update()    
             
     class Factory:
         def create(self,ps_parameters,str_section):

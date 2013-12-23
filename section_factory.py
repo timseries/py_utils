@@ -1,7 +1,6 @@
 #!/usr/bin/python -tt
 from __future__ import generators
 from py_utils import *
-import py_utils.results
 
 class SectionFactory(object):
     """
@@ -19,6 +18,7 @@ class SectionFactory(object):
         from py_utils.results import *
         from py_solvers import MSIST
         from py_operators import *
+
         str_id = ps_parameters.get_section_dict(str_section)['name']
         if not SectionFactory.factories.has_key(str_id):
             SectionFactory.factories[str_id] = \

@@ -1,7 +1,8 @@
 #!/usr/bin/python -tt
 from py_utils.results.metric import Metric
 import numpy as np
-from numpy import max as nmax, log10
+from numpy import max as nmax, log10, mean
+
 class PSNR(Metric):
     """
     PSNR metric class, for storing a single number vs iteration.
@@ -34,6 +35,7 @@ class PSNR(Metric):
                 snr_db = 10 * log10((self.peak**2)/mse)
             value = mse, snr_db
             self.data.append(value)
+            super(PSNR,self).update()
             
     class Factory:
         def create(self,ps_parameters,str_section):

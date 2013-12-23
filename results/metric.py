@@ -28,7 +28,7 @@ class Metric(Section):
 
     def update(self):
         if self.print_values:
-            print self.data[-1]  
+            print self.get_val('key',False) + ':\t' + str(self.data[-1])  
         
     class Factory:
         def create(self,ps_parameters,str_section):

@@ -65,15 +65,14 @@ class Observe(Section):
                 dict_in['Hx'] = ifftn(dict_in['Hxhat']).astype(dtype='float64')
                 k = dict_in['mp'] / nmax(dict_in['Hx'])
                 dict_in['r'] = k * dict_in['Hx']
-                dict_in['f'] = k * dict_in['x']
                 dict_in['fb'] = dict_in['r'] + dict_in['b']
                 dict_in['x'] = crop(dict_in['x'],dict_in['r'].shape)
+                dict_in['f'] = k * dict_in['x']
+                dict_in['x'] = dict_in['f']
                 noise_pars['ary_mean'] = dict_in['fb']
                 noise_pars['distribution'] = self.get_val('noisedistribution2',False)
                 dict_in['y'] = noise_gen(noise_pars).astype(dtype='uint16').astype(dtype='int32')
                 #inverse filtering in fourier domain
-                print '~H * y size'
-                print (~H * dict_in['y']).shape
                 dict_in['x_0'] = ifftn(~H * dict_in['y']).astype(dtype='float64')
             else:
                 raise Exception('spatial domain convolution not supported')    
