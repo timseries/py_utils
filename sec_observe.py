@@ -69,6 +69,7 @@ class Observe(Section):
                 dict_in['x'] = crop(dict_in['x'],dict_in['r'].shape)
                 dict_in['f'] = k * dict_in['x']
                 dict_in['x'] = dict_in['f']
+                dict_in['x_f'] = fftn(dict_in['x'])
                 noise_pars['ary_mean'] = dict_in['fb']
                 noise_pars['distribution'] = self.get_val('noisedistribution2',False)
                 dict_in['y'] = noise_gen(noise_pars).astype(dtype='uint16').astype(dtype='int32')

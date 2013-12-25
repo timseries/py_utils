@@ -16,7 +16,7 @@ class SectionFactory(object):
         from py_utils import *
         from py_utils.results.results import *
         from py_utils.results import *
-        from py_solvers import MSIST
+        from py_solvers import MSIST, PoissonDeblur
         from py_operators import *
 
         str_id = ps_parameters.get_section_dict(str_section)['name']

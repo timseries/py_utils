@@ -6,6 +6,8 @@ from numpy import arange, asarray, ndarray
 from scipy.constants.constants import pi
 import ImageOps
 from py_utils.results.metric import Metric
+from py_utils.signal_utilities.sig_utils import noise_gen, crop
+
 """
 This class module computes the Structured Similarity Image Metric (SSIM)
 
@@ -38,11 +40,19 @@ class SSIM(Metric):
             
     def update(self,dict_in):
         if self.data == []:
-            self.x = dict_in['x']
-        x_n = dict_in['x_n']
-        if x_n.ndim == 2:
+            if dict_in['y'].shape != dict_in['x'].shape:
+                self.x = crop(dict_in['x'],dict_in['y'].shape)
+                self.y = dict_in['y']
+            else:
+                self.x = dict_in['x']
+                self.y = dict_in['y']
+        if dict_in['y'].shape != dict_in['x_n'].shape:                
+            x_n = crop(dict_in['x_n'],dict_in['y'].shape)
+        else:
+            x_n = dict_in['x_n']
+        if dict_in['x_n'].ndim == 2:
             value = self.compute_ssim(self.x, x_n)
-        elif x_n.ndim == 3:    
+        elif dict_in['x_n'].ndim == 3:    
             value = self.compute_ssim_3d(self.x, x_n)
         else:
             raise Exception('unsupported number of dimensions in x_n')
@@ -68,7 +78,7 @@ class SSIM(Metric):
         result = scipy.ndimage.filters.correlate1d(result, gaussian_kernel_1d, axis = 1)
         return result
 
-    def compute_ssim_3d(self,im1, im2):
+    def compute_ssim_3d(self, im1, im2):
         if im1.shape != im2.shape:
             raise Exception('comparison volumes unequal dimensions')
         else:
@@ -102,14 +112,14 @@ class SSIM(Metric):
         if im1.__class__.__name__ == 'Image':
             img_mat_1, img_alpha_1 = _to_grayscale(im1)
             # don't count pixels where both images are both fully transparent
-            if img_alpha_1 is not None:
-                img_mat_1[img_alpha_1 == 255] = 0
+            #if img_alpha_1 is not None:
+            #img_mat_1[img_alpha_1 == 255] = 0
         else:
             img_mat_1 = im1
         if im2.__class__.__name__ == 'Image':    
             img_mat_2, img_alpha_2 = _to_grayscale(im2)
-            if img_alpha_2 is not None:
-                img_mat_2[img_alpha_2 == 255] = 0
+            #if img_alpha_2 is not None:
+            #img_mat_2[img_alpha_2 == 255] = 0
         else:
             img_mat_2 = im2
       
