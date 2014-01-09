@@ -37,6 +37,7 @@ class Observe(Section):
             noise_pars = {}
             noise_pars['seed'] = self.get_val('seed',True)
             noise_pars['variance'] = self.get_val('noisevariance',True)
+            dict_in['noisevariance'] = self.get_val('noisevariance',True)
             noise_pars['distribution'] = self.get_val('noisedistribution',False)
             noise_pars['mean'] = self.get_val('noisemean',True)
             noise_pars['interval'] = self.get_val('noiseinterval',True)#uniform

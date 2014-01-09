@@ -120,15 +120,15 @@ def noise_gen(noise_params):
 def colonvec(ary_small, ary_large):
     """
     Compute the indices used to pad/crop the results of applying the fft with augmented dimensions
+    ary_small and ary_large are the bounds of the cropping region
     """
     int_max = np.maximum(len(ary_small),len(ary_large))
-    #print ary_small
-    #print ary_large
-    retval = tuple([list(np.arange(ary_small[i]-1,ary_large[i],dtype='uint16')) for i in np.arange(int_max)])
-    #print retval
-    return retval
+    indices = [np.s_[ary_small[i]-1:ary_large[i]] for i in np.arange(int_max)]
+    return indices
 
 
 def crop(ary_signal, tup_crop_size):
     ary_half_difference = (array(ary_signal.shape) - array(tup_crop_size)) / 2
-    return ary_signal[eval('np.ix_'+str(colonvec(ary_half_difference+1, ary_half_difference+array(tup_crop_size))))]
+    return ary_signal[colonvec(ary_half_difference+1, ary_half_difference+array(tup_crop_size))]
+
+

@@ -25,19 +25,18 @@ class PSNR(Metric):
             self.x = dict_in['x'].flatten()
             if self.peak == 0:
                 self.peak = nmax(self.x)
-        x_n = dict_in['x_n'].flatten()
         if dict_in['x_n'].shape != self.x.shape:
             x_n = crop(dict_in['x_n'],dict_in['x'].shape).flatten()
         else:
             x_n = dict_in['x_n'].flatten()
-            mse = mean((x_n - self.x)**2)
-            if mse == 0:
-                snr_db = np.inf
-            else:    
-                snr_db = 10 * log10((self.peak**2)/mse)
-            value = mse, snr_db
-            self.data.append(value)
-            super(PSNR,self).update()
+        mse = mean((x_n - self.x)**2)
+        if mse == 0:
+            snr_db = np.inf
+        else:    
+            snr_db = 10 * log10((self.peak**2)/mse)
+        value = mse, snr_db
+        self.data.append(value)
+        super(PSNR,self).update()
             
     class Factory:
         def create(self,ps_parameters,str_section):
