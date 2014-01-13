@@ -51,7 +51,7 @@ class Observe(Section):
                 dict_in['yhat'] = dict_in['Hxhat'] + dict_in['nhat']
                 dict_in['y'] = ifftn(dict_in['yhat'])
                 #inverse filtering in fourier domain
-                dict_in['x_0'] = ifftn((~H * dict_in['y']) / \
+                dict_in['x_0'] = ifftn(fftn(~H * dict_in['y']) / \
                   (conj(H.get_spectrum()) * H.get_spectrum() + wrf * noise_pars['variance']))
             else:
                 raise Exception('spatial domain convolution not supported')    
@@ -75,7 +75,7 @@ class Observe(Section):
                 noise_pars['distribution'] = self.get_val('noisedistribution2',False)
                 dict_in['y'] = noise_gen(noise_pars).astype(dtype='uint16').astype(dtype='int32')
                 #inverse filtering in fourier domain
-                dict_in['x_0'] = ifftn(~H * dict_in['y']).astype(dtype='float64')
+                dict_in['x_0'] = (~H * dict_in['y']).astype(dtype='float32')
             else:
                 raise Exception('spatial domain convolution not supported')    
             
