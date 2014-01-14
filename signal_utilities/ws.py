@@ -122,7 +122,7 @@ class WS(object):
             if str(self.tup_coeffs[0][(Ellipsis,0)].dtype)[0:7]=='complex':
                 self.is_complex = 1
             int_len_ws_vector = self.N*(self.is_complex+1)
-            self.ws_vector = np.zeros(int_len_ws_vector,dtype='float64')
+            self.ws_vector = np.zeros(int_len_ws_vector,dtype='float32')
         int_this_stride = np.product(self.ary_scaling.shape)*(self.is_complex+1)
         int_last_stride = 0
         self.ws_vector[int_last_stride:int_this_stride:2] = np.real(self.ary_scaling.flatten())

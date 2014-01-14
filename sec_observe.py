@@ -62,8 +62,8 @@ class Observe(Section):
             dict_in['mp'] = self.get_val('maximumphotonspervoxel', True)
             dict_in['b'] = self.get_val('background', True)
             if str_domain == 'fourier':
-                dict_in['Hxhat'] = H * dict_in['x']
-                dict_in['Hx'] = ifftn(dict_in['Hxhat']).astype(dtype='float64')
+                dict_in['Hx'] = H * dict_in['x']
+                dict_in['Hxhat'] = fftn(dict_in['Hx'])
                 k = dict_in['mp'] / nmax(dict_in['Hx'])
                 dict_in['r'] = k * dict_in['Hx']
                 dict_in['fb'] = dict_in['r'] + dict_in['b']
