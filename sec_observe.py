@@ -6,8 +6,8 @@ from numpy.fft import fftn, ifftn
 from py_operators.operator_comp import OperatorComp
 import warnings
 import numpy as np
+from py_utils.signal_utilities.sig_utils import nd_impulse, circshift, colonvec, noise_gen, crop
 
-from py_utils.signal_utilities.sig_utils import noise_gen, crop
 
 class Observe(Section):
     """
@@ -62,6 +62,10 @@ class Observe(Section):
             dict_in['mp'] = self.get_val('maximumphotonspervoxel', True)
             dict_in['b'] = self.get_val('background', True)
             if str_domain == 'fourier':
+                print 'size gt: ' + str(dict_in['x'].shape)
+                orig_shape = dict_in['x'].shape
+                Hspec = np.zeros(dict_in['x'].shape)
+                
                 dict_in['Hx'] = H * dict_in['x']
                 dict_in['Hxhat'] = fftn(dict_in['Hx'])
                 k = dict_in['mp'] / nmax(dict_in['Hx'])
@@ -74,8 +78,23 @@ class Observe(Section):
                 noise_pars['ary_mean'] = dict_in['fb']
                 noise_pars['distribution'] = self.get_val('noisedistribution2',False)
                 dict_in['y'] = noise_gen(noise_pars).astype(dtype='uint16').astype(dtype='int32')
-                #inverse filtering in fourier domain
+                #inverse filtering in fourier domain to find initial solutino
+                Hspec[tuple([Hspec.shape[i]/2 for i in np.arange(Hspec.ndim)])]=1.0
+                Hspec = fftn(H * Hspec)
+                Hty = (~H) * dict_in['y']
+                Hty_crop_hat = fftn(crop(Hty,dict_in['x'].shape))
+                print 'size hty: ' + str(Hty.shape)
+                print 'size hspec: ' + str(Hspec.shape)
+                #x0 = np.real(ifftn(Hty_crop_hat/(conj(Hspec)*Hspec + wrf * noise_pars['variance'])))
+                print colonvec(H.ls_operators[0].forward_size_min, H.ls_operators[0].forward_size_max)
+                #dict_in['x_0'] = np.zeros(orig_shape)
+                #ary_small = np.asarray([(dict_in['x_0'].shape[i] - x0.shape[i])/2 + 1 for i in np.arange(x0.ndim)])
+                #ary_large = np.asarray([ary_small[i] + x0.shape[i] - 1 for i in np.arange(x0.ndim)])
+                #slices=colonvec(ary_small,ary_large)
+                #dict_in['x_0'][slices]=x0
+                #simple adjoint to find initial solutino
                 dict_in['x_0'] = (~H * dict_in['y']).astype(dtype='float32')
+                print 'x0 shape: ' + str(dict_in['x_0'].shape)
             else:
                 raise Exception('spatial domain convolution not supported')    
             
