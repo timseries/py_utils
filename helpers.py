@@ -1,4 +1,6 @@
 #!/usr/bin/python -tt
+from scipy.io import savemat,loadmat
+
 def convertStr(s):
     """Convert string to int, output 'error' othwerise."""
     try:
@@ -16,3 +18,12 @@ def find_mount_point(path):
     while not os.path.ismount(path):
         path = os.path.dirname(path)
     return path
+
+def numpy_to_mat(ary_numpy_array, str_filepath):
+    """
+    Flatten a numpy array using column major ordering, then save to str_filepath.
+    File member will always be 'ary_numpy_array'
+    """
+    data = {}
+    data['ary_numpy_array'] = ary_numpy_array.flatten()
+    savemat(str_filepath,data)

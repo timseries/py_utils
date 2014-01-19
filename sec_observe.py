@@ -7,7 +7,7 @@ from py_operators.operator_comp import OperatorComp
 import warnings
 import numpy as np
 from py_utils.signal_utilities.sig_utils import nd_impulse, circshift, colonvec, noise_gen, crop
-
+from py_utils.helpers import numpy_to_mat
 
 class Observe(Section):
     """
@@ -67,6 +67,8 @@ class Observe(Section):
                 Hspec = np.zeros(dict_in['x'].shape)
                 
                 dict_in['Hx'] = H * dict_in['x']
+                #save this result for comparison with matlab implementation...
+                numpy_to_mat(dict_in['Hx'],'/home/tim/repos/py_solvers/applications/deconvolution_challenge/Hp0.mat')
                 dict_in['Hxhat'] = fftn(dict_in['Hx'])
                 k = dict_in['mp'] / nmax(dict_in['Hx'])
                 dict_in['r'] = k * dict_in['Hx']
@@ -78,15 +80,13 @@ class Observe(Section):
                 noise_pars['ary_mean'] = dict_in['fb']
                 noise_pars['distribution'] = self.get_val('noisedistribution2',False)
                 dict_in['y'] = noise_gen(noise_pars).astype(dtype='uint16').astype(dtype='int32')
-                #inverse filtering in fourier domain to find initial solutino
+                #inverse filtering in fourier domain to find initial solution
                 Hspec[tuple([Hspec.shape[i]/2 for i in np.arange(Hspec.ndim)])]=1.0
                 Hspec = fftn(H * Hspec)
                 Hty = (~H) * dict_in['y']
                 Hty_crop_hat = fftn(crop(Hty,dict_in['x'].shape))
-                print 'size hty: ' + str(Hty.shape)
-                print 'size hspec: ' + str(Hspec.shape)
                 #x0 = np.real(ifftn(Hty_crop_hat/(conj(Hspec)*Hspec + wrf * noise_pars['variance'])))
-                print colonvec(H.ls_operators[0].forward_size_min, H.ls_operators[0].forward_size_max)
+
                 #dict_in['x_0'] = np.zeros(orig_shape)
                 #ary_small = np.asarray([(dict_in['x_0'].shape[i] - x0.shape[i])/2 + 1 for i in np.arange(x0.ndim)])
                 #ary_large = np.asarray([ary_small[i] + x0.shape[i] - 1 for i in np.arange(x0.ndim)])
