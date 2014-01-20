@@ -71,7 +71,7 @@ class Observe(Section):
                 Hspec = np.zeros(orig_shape)
                 dict_in['r'] = H * dict_in['x'] #Direct...
                 dict_in['w'] = self.W * dict_in['x']
-                pdb.set_trace()
+                #pdb.set_trace()
                 #dict_in['w'].flatten()
                 #numpy_to_mat(dict_in['w'].ws_vector,'/home/tim/repos/py_solvers/applications/deconvolution_challenge/ws_gt_vector_py.mat','ws_gt_vector_py')    
                 #print 'done storing wavelet coeffs'
