@@ -7,7 +7,9 @@ from py_operators.operator_comp import OperatorComp
 import warnings
 import numpy as np
 from py_utils.signal_utilities.sig_utils import nd_impulse, circshift, colonvec, noise_gen, crop
+#for debug
 from py_utils.helpers import numpy_to_mat
+import pdb
 
 class Observe(Section):
     """
@@ -21,8 +23,11 @@ class Observe(Section):
         super(Observe,self).__init__(ps_parameters,str_section)
         self.str_observation_type = self.get_val('observationtype',False)
         self.H = OperatorComp(ps_parameters,self.get_val('modalities',False))
+        if len(self.H.ls_operators)==1: #if we just have one transform
+            self.H = self.H.ls_operators[0] 
         self.W = OperatorComp(ps_parameters,self.get_val('transforms',False))
-        
+        if len(self.W.ls_operators)==1: #assume we just have one transform
+            self.W = self.W.ls_operators[0] 
     def observe(self,dict_in):
         """
         Append an input dictionary object (dict_in) with the measurment variables
@@ -62,20 +67,21 @@ class Observe(Section):
             dict_in['mp'] = self.get_val('maximumphotonspervoxel', True)
             dict_in['b'] = self.get_val('background', True)
             if str_domain == 'fourier':
-                print 'size gt: ' + str(dict_in['x'].shape)
                 orig_shape = dict_in['x'].shape
-                Hspec = np.zeros(dict_in['x'].shape)
-                
-                dict_in['Hx'] = H * dict_in['x']
+                Hspec = np.zeros(orig_shape)
+                dict_in['r'] = H * dict_in['x'] #Direct...
+                dict_in['w'] = self.W * dict_in['x']
+                pdb.set_trace()
+                #dict_in['w'].flatten()
+                #numpy_to_mat(dict_in['w'].ws_vector,'/home/tim/repos/py_solvers/applications/deconvolution_challenge/ws_gt_vector_py.mat','ws_gt_vector_py')    
+                #print 'done storing wavelet coeffs'
                 #save this result for comparison with matlab implementation...
-                numpy_to_mat(dict_in['Hx'],'/home/tim/repos/py_solvers/applications/deconvolution_challenge/Hp0.mat')
-                dict_in['Hxhat'] = fftn(dict_in['Hx'])
-                k = dict_in['mp'] / nmax(dict_in['Hx'])
-                dict_in['r'] = k * dict_in['Hx']
+                dict_in['Hxhat'] = fftn(dict_in['r'])
+                k = dict_in['mp'] / nmax(dict_in['r'])
+                dict_in['r'] = k * dict_in['r']
+                dict_in['x'] = k * dict_in['x']
                 dict_in['fb'] = dict_in['r'] + dict_in['b']
                 dict_in['x'] = crop(dict_in['x'],dict_in['r'].shape)
-                dict_in['f'] = k * dict_in['x']
-                dict_in['x'] = dict_in['f']
                 dict_in['x_f'] = fftn(dict_in['x'])
                 noise_pars['ary_mean'] = dict_in['fb']
                 noise_pars['distribution'] = self.get_val('noisedistribution2',False)
@@ -83,8 +89,8 @@ class Observe(Section):
                 #inverse filtering in fourier domain to find initial solution
                 Hspec[tuple([Hspec.shape[i]/2 for i in np.arange(Hspec.ndim)])]=1.0
                 Hspec = fftn(H * Hspec)
-                Hty = (~H) * dict_in['y']
-                Hty_crop_hat = fftn(crop(Hty,dict_in['x'].shape))
+                #Hty = (~H) * dict_in['y']
+                #Hty_crop_hat = fftn(crop(Hty,dict_in['x'].shape))
                 #x0 = np.real(ifftn(Hty_crop_hat/(conj(Hspec)*Hspec + wrf * noise_pars['variance'])))
 
                 #dict_in['x_0'] = np.zeros(orig_shape)
@@ -93,8 +99,7 @@ class Observe(Section):
                 #slices=colonvec(ary_small,ary_large)
                 #dict_in['x_0'][slices]=x0
                 #simple adjoint to find initial solutino
-                dict_in['x_0'] = (~H * dict_in['y']).astype(dtype='float32')
-                print 'x0 shape: ' + str(dict_in['x_0'].shape)
+                dict_in['x_0'] = ((~H) * (dict_in['y'])).astype(dtype='float32')
             else:
                 raise Exception('spatial domain convolution not supported')    
             

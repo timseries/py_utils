@@ -19,11 +19,11 @@ def find_mount_point(path):
         path = os.path.dirname(path)
     return path
 
-def numpy_to_mat(ary_numpy_array, str_filepath):
+def numpy_to_mat(ary_numpy_array, str_filepath, str_member='ary_numpy_array'):
     """
     Flatten a numpy array using column major ordering, then save to str_filepath.
     File member will always be 'ary_numpy_array'
     """
     data = {}
-    data['ary_numpy_array'] = ary_numpy_array.flatten()
+    data[str_member] = ary_numpy_array
     savemat(str_filepath,data)

@@ -111,7 +111,7 @@ class WS(object):
             out *= d
         return out
 
-    def flatten(self,thresh=False):
+    def flatten(self,lgcReal=True,thresh=False):
         '''
         Flattens the wavelet object as a vector (Nx1 ndarray) as a member (a vector view of the data)
         '''
@@ -120,39 +120,44 @@ class WS(object):
         if self.ws_vector == None:
             self.is_complex = 0
             if str(self.tup_coeffs[0][(Ellipsis,0)].dtype)[0:7]=='complex':
-                self.is_complex = 1
-            int_len_ws_vector = self.N*(self.is_complex+1)
+                self.is_complex = True
+            self.int_if = self.is_complex * lgcReal + 1
+            int_len_ws_vector = self.N*(self.int_if)-(self.is_complex*lgcReal)*np.prod(self.dims[0])#counteract double counting of real lowpass
             self.ws_vector = np.zeros(int_len_ws_vector,dtype='float32')
-        int_this_stride = np.product(self.ary_scaling.shape)*(self.is_complex+1)
+        int_this_stride = np.product(self.ary_scaling.shape)
         int_last_stride = 0
-        self.ws_vector[int_last_stride:int_this_stride:2] = np.real(self.ary_scaling.flatten())
-        if thresh:
-            self.ws_vector[int_last_stride+1:int_this_stride+1:2] = np.real(self.ary_scaling.flatten())
-        else:
-            self.ws_vector[int_last_stride+1:int_this_stride+1:2] = np.imag(self.ary_scaling.flatten())
+        #the lowpass image
+        self.ws_vector[int_last_stride:int_this_stride:1] = self.ary_scaling.flatten()
+        #the highpass coefficients
         for int_level,int_orientation in self.get_levs_ors():
             dim = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape
             int_last_stride = int_this_stride
-            int_this_stride = np.product(dim) + int_last_stride
-            self.ws_vector[int_last_stride:int_this_stride] = \
-              self.tup_coeffs[int_level][(Ellipsis,int_orientation)].flatten()
+            int_this_stride = np.product(dim)*self.int_if + int_last_stride
+            ary_tup_coeffs = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].flatten()
+            self.ws_vector[int_last_stride:int_this_stride:self.int_if] = np.real(ary_tup_coeffs)
+            if self.int_if==2:
+                self.ws_vector[int_last_stride+1:int_this_stride:self.int_if] = np.imag(ary_tup_coeffs)
 
     def unflatten(self):
         '''
         Stores the ws_vector back in the ws object, assumes w_ve
         '''
         self.get_dims()
-        int_this_stride = np.product(self.ary_scaling.shape)*(self.is_complex+1)
         int_last_stride = 0
-        self.ary_scaling = self.ws_vector[int_last_stride:int_this_stride:2].reshape(self.ary_scaling.shape)
+        int_this_stride = np.prod(self.ary_scaling.shape)
+        self.ary_scaling = self.ws_vector[int_last_stride:int_this_stride:1].reshape(self.ary_scaling.shape)
         for int_level,int_orientation in self.get_levs_ors():
             dim = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape
             int_last_stride = int_this_stride
-            int_this_stride = np.product(dim)*(self.is_complex+1) + int_last_stride
-            self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = \
-              self.ws_vector[int_last_stride:int_this_stride:2].reshape(dim) + \
-              1j*self.ws_vector[int_last_stride+1:int_this_stride+1:2].reshape(dim)
-
+            int_this_stride = np.product(dim)*(self.int_if) + int_last_stride
+            if self.int_if==2:
+                self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = \
+                  (self.ws_vector[int_last_stride:int_this_stride:2].reshape(dim) + \
+                   1.0j*self.ws_vector[int_last_stride+1:int_this_stride+1:2].reshape(dim))
+            else:
+                self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = \
+                  self.ws_vector[int_last_stride:int_this_stride:1].reshape(dim)
+                  
     def get_dims(self):
         if self.dims == None:
             self.dims = [self.ary_scaling.shape]
