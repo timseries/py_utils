@@ -111,9 +111,11 @@ class WS(object):
             out *= d
         return out
 
-    def flatten(self,lgcReal=True,thresh=False):
+    def flatten(self,lgc_real=True,duplicate=False):
         '''
-        Flattens the wavelet object as a vector (Nx1 ndarray) as a member (a vector view of the data)
+        Flattens the wavelet object as a vector (Nx1 ndarray) as a member (a vector view of the data). 
+        lgc_real: whether or not to use purely real ouput. In this case, real/imag parts are stored consecutively.
+        If duplicate=True, then we simply copy the elements twice. This is useful for thresholding using the complex modulus.
         '''
         self.get_dims()
         #allocate the vector interface once
@@ -121,8 +123,10 @@ class WS(object):
             self.is_complex = 0
             if str(self.tup_coeffs[0][(Ellipsis,0)].dtype)[0:7]=='complex':
                 self.is_complex = True
-            self.int_if = self.is_complex * lgcReal + 1
-            int_len_ws_vector = self.N*(self.int_if)-(self.is_complex*lgcReal)*np.prod(self.dims[0])#counteract double counting of real lowpass
+            self.int_if = self.is_complex * lgc_real + 1
+            if duplicate:
+                self.int_if = 2
+            int_len_ws_vector = self.N*(self.int_if)-(self.is_complex*lgc_real)*np.prod(self.dims[0])#counteract double counting of real lowpass
             self.ws_vector = np.zeros(int_len_ws_vector,dtype='float32')
         int_this_stride = np.product(self.ary_scaling.shape)
         int_last_stride = 0
@@ -136,7 +140,11 @@ class WS(object):
             ary_tup_coeffs = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].flatten()
             self.ws_vector[int_last_stride:int_this_stride:self.int_if] = np.real(ary_tup_coeffs)
             if self.int_if==2:
-                self.ws_vector[int_last_stride+1:int_this_stride:self.int_if] = np.imag(ary_tup_coeffs)
+                if duplicate:
+                    self.ws_vector[int_last_stride+1:int_this_stride:self.int_if] = np.real(ary_tup_coeffs)
+                else:    
+                    self.ws_vector[int_last_stride+1:int_this_stride:self.int_if] = np.imag(ary_tup_coeffs)
+
 
     def unflatten(self):
         '''
