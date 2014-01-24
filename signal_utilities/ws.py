@@ -10,15 +10,16 @@ class WS(object):
     WS class for storing and retreiving and performing operations on wavelet subbands. 
     """
     
-    def __init__(self,ary_scaling,tup_coeffs):
+    def __init__(self,ary_lowpass,tup_coeffs,tup_scaling=None):
         """
         Class constructor for DTCWT
         """
-        self.ary_scaling = ary_scaling.copy()
+        self.ary_lowpass = ary_lowpass.copy()
         self.tup_coeffs = deepcopy(tup_coeffs)
-        self.ary_size = np.dot(2,ary_scaling.shape) 
+        self.tup_scaling = tup_scaling
+        self.ary_size = np.dot(2,ary_lowpass.shape) 
         self.int_levels = len(tup_coeffs)
-        self.int_dimension = ary_scaling.ndim
+        self.int_dimension = ary_lowpass.ndim
         self.int_orientations = tup_coeffs[0].shape[-1]
         self.int_subbands = self.int_levels * self.int_orientations + 1
         self.dims = None #dimensions of all of the subbands
@@ -44,9 +45,9 @@ class WS(object):
         int_subband_index have been set to 0.
         """ 
         #create new object
-        ws_one_subband = WS(self.ary_scaling,self.tup_coeffs)
+        ws_one_subband = WS(self.ary_lowpass,self.tup_coeffs)
         if int_subband_index != 0:
-            ws_one_subband.ary_scaling = np.zeros(self.ary_scaling.shape)
+            ws_one_subband.ary_lowpass = np.zeros(self.ary_lowpass.shape)
             int_level_s, int_orientation_s = self.lev_ori_from_subband(int_subband_index)
         for int_level in np.arange(self.int_levels):
             for int_orientation in np.arange(self.int_orientations):
@@ -60,14 +61,14 @@ class WS(object):
         For a given subband index, returns the corresponding subband as ndarray
         """ 
         if int_subband_index == 0:
-            return self.ary_scaling
+            return self.ary_lowpass
         else:
             int_level, int_orientation = self.lev_ori_from_subband(int_subband_index)
         return self.tup_coeffs[int_level][(Ellipsis,int_orientation)]
     
     def set_subband(self,int_subband_index,value):    
         if int_subband_index == 0:
-            self.ary_scaling = value
+            self.ary_lowpass = value
         else:
             int_level, int_orientation = self.lev_ori_from_subband(int_subband_index)
             self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = value
@@ -77,7 +78,7 @@ class WS(object):
         Returns the wavelet object as a vector (Nx1 ndarray)
         '''
         if self.dims == None:
-            self.dims = [ary_scaling.shape]
+            self.dims = [ary_lowpass.shape]
             self.dims = self.dims.append([self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape \
                          for int_level,int_orientation in zip(self.int_levels,self.int_orientations)])
         products = map(product, self.dims)
@@ -91,7 +92,7 @@ class WS(object):
             
     def f_unflatten(self):
         '''
-        Returns the original array, stores in the ary_scaling and tup_coeffs objects. 
+        Returns the original array, stores in the ary_lowpass and tup_coeffs objects. 
         Assumes flattens is called first.
         '''
         products = map(self.product, dims)
@@ -128,10 +129,10 @@ class WS(object):
                 self.int_if = 2
             int_len_ws_vector = self.N*(self.int_if)-(self.is_complex*lgc_real)*np.prod(self.dims[0])#counteract double counting of real lowpass
             self.ws_vector = np.zeros(int_len_ws_vector,dtype='float32')
-        int_this_stride = np.product(self.ary_scaling.shape)
+        int_this_stride = np.product(self.ary_lowpass.shape)
         int_last_stride = 0
         #the lowpass image
-        self.ws_vector[int_last_stride:int_this_stride:1] = self.ary_scaling.flatten()
+        self.ws_vector[int_last_stride:int_this_stride:1] = self.ary_lowpass.flatten()
         #the highpass coefficients
         for int_level,int_orientation in self.get_levs_ors():
             dim = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape
@@ -152,8 +153,8 @@ class WS(object):
         '''
         self.get_dims()
         int_last_stride = 0
-        int_this_stride = np.prod(self.ary_scaling.shape)
-        self.ary_scaling = self.ws_vector[int_last_stride:int_this_stride:1].reshape(self.ary_scaling.shape)
+        int_this_stride = np.prod(self.ary_lowpass.shape)
+        self.ary_lowpass = self.ws_vector[int_last_stride:int_this_stride:1].reshape(self.ary_lowpass.shape)
         for int_level,int_orientation in self.get_levs_ors():
             dim = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape
             int_last_stride = int_this_stride
@@ -168,7 +169,7 @@ class WS(object):
                   
     def get_dims(self):
         if self.dims == None:
-            self.dims = [self.ary_scaling.shape]
+            self.dims = [self.ary_lowpass.shape]
             self.dims = self.dims + [self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape \
                                      for int_level,int_orientation in self.get_levs_ors()]
             self.N = sum([np.prod(self.dims[i]) for i in np.arange(len(self.dims))])
