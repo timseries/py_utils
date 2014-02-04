@@ -4,25 +4,24 @@ from libtiff import TIFF as tif
 import numpy as np
 import Image
 
-class Input(Section):
+class Output(Section):
     """
-    Input class for handling reading of any type of data file for a solver pipeline.
+    Output class for writing solution/data to file.
     """
     
     def __init__(self,ps_parameters,str_section):
         """
-        Class constructor for Input.
+        Class constructor for Output.
         """       
-        super(Input,self).__init__(ps_parameters,str_section)
+        super(Output,self).__init__(ps_parameters,str_section)
         self.filedir = self.get_val('filedir', False)
         self.filemember = self.get_val('filemember', False) #used for stuctured file
         self.filename = self.get_val('filename', False)
-        #use the config's dir as a reference pt if path not specified or not full
         self.filepath = self.filedir + self.filename
         if not (self.filepath[0] == '/' or self.filepath == ''):
             self.filepath = self.ps_parameters.str_file_dir + '/' + self.filepath
           
-    def read(self,dict_in,return_val=False):
+    def write(self,dict_in,return_val=False):
         """
         Read a file, branch on the filetype.
         """
@@ -44,6 +43,8 @@ class Input(Section):
         else:
             dict_in['x'] = ary_image
 
+    def write(self,ary_,return_val=False):        
+        
     class Factory:
         def create(self,ps_parameters,str_section):
-            return Input(ps_parameters,str_section)
+            return Output(ps_parameters,str_section)

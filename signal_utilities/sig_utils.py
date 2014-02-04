@@ -6,6 +6,8 @@ from numpy.fft import fftn, ifftn
 from numpy.random import normal, rand, seed, poisson
 import itertools
 
+import pdb
+
 def nd_impulse(ary_size):
     ary_impulse = zeros(ary_size)
     ary_impulse[tuple(array(ary_impulse.shape)/2)] = 1
@@ -16,7 +18,7 @@ def spectral_radius(op_transform, op_modality, tup_size):
     :param op_transform: a transform operator which returns a ws object
     :param op_modality: some linear operator, 
      assumes this is diagonalizable by the fft (e.g. convolution)
-
+    :param tup_size: size of impulse used...
     :returns ary_lambda_alpha, a vector of subband weights which upperbounds the spectral radius
     
     .. codeauthor:: Timothy Roberts <timothy.daniel.roberts@gmail.com>, 2013
@@ -25,15 +27,22 @@ def spectral_radius(op_transform, op_modality, tup_size):
     ws_w = op_transform * ary_impulse
     ary_alpha = zeros(ws_w.int_subbands)
     ary_temp = op_modality * ary_impulse # unused result, just to initialize with correct size
-    ary_ms = (op_modality.get_spectrum()).flatten()
+    ary_ms = op_modality.get_spectrum()
+    print 'spectrum output size: ' + str(ary_ms.shape)
+    if tup_size != ary_ms.shape:
+        ary_impulse = nd_impulse(ary_ms.shape)
+        ws_w = op_transform * ary_impulse
+    ary_ms = ary_ms.flatten()
     ary_subbands = arange(ws_w.int_subbands)
     ary_ss = zeros([ary_ms.shape[0],ws_w.int_subbands],dtype='complex64')
     ary_alpha = zeros(ws_w.int_subbands,)
     #store the inband psd's (and conjugate)
     for s in ary_subbands:
+        print s
         ary_ss[:,s] = fftn(~op_transform * ws_w.one_subband(s)).flatten()
     #compute the inband and crossband psd maxima
     for s in ary_subbands:
+        print s
         for c in ary_subbands:
              ary_alpha[s] += nmax(absolute(conj(ary_ms * ary_ss[:,s]) * ary_ms * ary_ss[:,c]))
     #return the alpha array, upper-bounded to 1                      
@@ -109,10 +118,10 @@ def noise_gen(noise_params):
     if noise_params['distribution'] == 'gaussian':
         ary_noise = normal(dbl_mean, np.sqrt(dbl_variance), tup_size)
     elif noise_params['distribution'] == 'uniform':
-         ary_interval = noise_params['interval']
-         ary_noise = (ary_interval[1] - ary_interval[0]) * rand(tup_size) + ary_interval[0]
+        ary_interval = noise_params['interval']
+        ary_noise = (ary_interval[1] - ary_interval[0]) * rand(tup_size) + ary_interval[0]
     elif noise_params['distribution'] == 'poisson':     
-         ary_noise = poisson(lam=noise_params['ary_mean'])
+        ary_noise = poisson(lam=noise_params['ary_mean'])
     else:
         raise Exception('unsupported noise distribution: ' + noise_params['distribution'])
     return ary_noise
@@ -130,5 +139,3 @@ def colonvec(ary_small, ary_large):
 def crop(ary_signal, tup_crop_size):
     ary_half_difference = (array(ary_signal.shape) - array(tup_crop_size)) / 2
     return ary_signal[colonvec(ary_half_difference+1, ary_half_difference+array(tup_crop_size))]
-
-

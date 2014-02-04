@@ -70,13 +70,8 @@ class Observe(Section):
                 orig_shape = dict_in['x'].shape
                 Hspec = np.zeros(orig_shape)
                 dict_in['r'] = H * dict_in['x'] #Direct...
-
                 dict_in['w'] = self.W * dict_in['x']
                 dict_in['w'].flatten()
-                
-                print 'max w: ' + str(np.max(np.abs(dict_in['w'].ws_vector)))
-                print 'min w: ' + str(np.min(np.abs(dict_in['w'].ws_vector)))
-                #pdb.set_trace()
                 #dict_in['w'].flatten()
                 #numpy_to_mat(dict_in['w'].ws_vector,'/home/tim/repos/py_solvers/applications/deconvolution_challenge/ws_gt_vector_py.mat','ws_gt_vector_py')    
                 #print 'done storing wavelet coeffs'
@@ -94,19 +89,21 @@ class Observe(Section):
                 #inverse filtering in fourier domain to find initial solution
                 Hspec[tuple([Hspec.shape[i]/2 for i in np.arange(Hspec.ndim)])]=1.0
                 Hspec = fftn(H * Hspec)
-                #Hty = (~H) * dict_in['y']
-                #Hty_crop_hat = fftn(crop(Hty,dict_in['x'].shape))
-                #x0 = np.real(ifftn(Hty_crop_hat/(conj(Hspec)*Hspec + wrf * noise_pars['variance'])))
+                Hty = (~H) * dict_in['y']
+                Hty_crop_hat = fftn(crop(Hty,dict_in['x'].shape))
+                x0 = np.real(ifftn(Hty_crop_hat/(conj(Hspec)*Hspec + wrf * noise_pars['variance'])))
 
-                #dict_in['x_0'] = np.zeros(orig_shape)
-                #ary_small = np.asarray([(dict_in['x_0'].shape[i] - x0.shape[i])/2 + 1 for i in np.arange(x0.ndim)])
-                #ary_large = np.asarray([ary_small[i] + x0.shape[i] - 1 for i in np.arange(x0.ndim)])
-                #slices=colonvec(ary_small,ary_large)
-                #dict_in['x_0'][slices]=x0
+                dict_in['x_0'] = np.zeros(orig_shape)
+                ary_small = np.asarray([(dict_in['x_0'].shape[i] - x0.shape[i])/2 + 1 for i in np.arange(x0.ndim)])
+                ary_large = np.asarray([ary_small[i] + x0.shape[i] - 1 for i in np.arange(x0.ndim)])
+                slices=colonvec(ary_small,ary_large)
+                dict_in['x_0'][slices]=x0
+                dict_in['y_padded'] = np.zeros(orig_shape)
+                dict_in['y_padded'][slices] = dict_in['y']
                 #simple adjoint to find initial solutino
                 #dict_in['x_0'] = ((~H) * (dict_in['y'])).astype(dtype='float32')
-                dict_in['x_0'] = np.real(ifftn(fftn(~H * dict_in['y']) / \
-                  (conj(H.get_spectrum()) * H.get_spectrum() + wrf * noise_pars['variance'])))
+                #dict_in['x_0'] = np.real(ifftn(fftn(~H * dict_in['y']) / \
+                #(conj(H.get_spectrum()) * H.get_spectrum() + wrf * noise_pars['variance'])))
             else:
                 raise Exception('spatial domain convolution not supported')    
             

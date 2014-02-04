@@ -16,7 +16,8 @@ class WS(object):
         """
         self.ary_lowpass = ary_lowpass.copy()
         self.tup_coeffs = deepcopy(tup_coeffs)
-        self.tup_scaling = tup_scaling
+        if tup_scaling:
+            self.tup_scaling = deepcopy(tup_scaling)
         self.ary_size = np.dot(2,ary_lowpass.shape) 
         self.int_levels = len(tup_coeffs)
         self.int_dimension = ary_lowpass.ndim
@@ -32,7 +33,7 @@ class WS(object):
         corresponds to scaling function.
         """        
         if int_subband_index == 0:
-            raise Exception("index 0 corresponds to scaling function!")    
+            raise Exception("index 0 corresponds to lowpass subband")    
         else:
             int_subband_index -= 1
             int_level = int_subband_index / self.int_orientations
@@ -65,8 +66,15 @@ class WS(object):
         else:
             int_level, int_orientation = self.lev_ori_from_subband(int_subband_index)
         return self.tup_coeffs[int_level][(Ellipsis,int_orientation)]
+
+    def get_subband_sc(self,int_subband_index):
+        """
+        For a given subband index, returns the corresponding subband as ndarray
+        """ 
+        int_level, int_orientation = self.lev_ori_from_subband(int_subband_index)
+        return self.tup_scaling[int_level]
     
-    def set_subband(self,int_subband_index,value):    
+    def set_subband(self,int_subband_index,value):
         if int_subband_index == 0:
             self.ary_lowpass = value
         else:
