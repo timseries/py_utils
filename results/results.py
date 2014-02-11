@@ -10,6 +10,8 @@ import matplotlib._pylab_helpers
 import matplotlib.pyplot as plt
 import Tkinter
 import os
+import time
+import datetime
 
 class Results(Section):
     """
@@ -18,8 +20,7 @@ class Results(Section):
     """
     
     def __init__(self, ps_parameters, str_section):
-        """
-        Class constructor for Results.
+        """Class constructor for Results.
         """       
         super(Results,self).__init__(ps_parameters,str_section)
         self.ls_metric_names = self.get_val('metrics',False)
@@ -32,6 +33,9 @@ class Results(Section):
         self.desktop = self.get_val('desktop',True)
         self.row_offset = self.get_val('rowoffset',True)
         self.int_overlap = max(5,self.get_val('overlap',True))
+        self.save_interval = self.get_val('saveinterval',True)
+        self.output_directory = self.get_val('outputdirectory',False)
+        
         #get scrren info
         screen = os.popen("xrandr -q -d :0").readlines()[0]
         self.screen_size =  aa([int(screen.split()[7]), \
@@ -39,9 +43,26 @@ class Results(Section):
         self.arrange_metric_windows() #figure out the coordinates
         
     def update(self,dict_in):
+        """Update the metrics in this results collection.
+        """
         for metric in self.ls_metrics:
             metric.update(dict_in)
-             
+            
+    def save(self):
+        """Save the metrics in this results collection to file. This aggregates all fo the 'csv' output metrics together into one file for cleaner inclusion in 
+        """
+        #create a folder in the output directory with the current minute's time stamp
+        st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M:%S')
+        strDirectory = self.output_directory + '/' + st + '/'
+        if not os.path.exists(strDirectory):
+            os.mkdir(strDirectory)
+        #save the parameters to this folder as ini, and write as csv
+        self.ps_parameters.write(strDirectory+'ps_parameters.ini')
+        self.ps_parameters.write_csv(strDirectory+'ps_parameters.csv')
+        #start a new csv file, and save the csv metrics there
+        for metric in self.ls_metrics:
+            metric.save(dict_in)
+
     def arrange_metric_windows(self):
         """
         Determine the grid placement of metric figure windows and assign figure numbers. 
@@ -66,7 +87,7 @@ class Results(Section):
             wm.window.wm_geometry(str(metric.w_size[0]) + "x" + \
                                   str(metric.w_size[1]) + "+" + \
                                   str(metric.w_coords[0]) + "+" + \
-                                  str(metric.w_coords[1])) #does not work with MAC (yet)
+                                  str(metric.w_coords[1])) #does not work with MAC (pdatyet)
                                   
     def clear(self):
         """

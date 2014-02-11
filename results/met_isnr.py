@@ -30,8 +30,7 @@ class ISNR(Metric):
         else:
             x_n = dict_in['x_n'].flatten()
         value = 10 * log10((norm(self.y - self.x,2)**2)/(norm(x_n - self.x,2)**2))
-        self.data.append(value)
-        super(ISNR,self).update()
+        super(ISNR,self).update(value)
         
     class Factory:
         def create(self,ps_parameters,str_section):

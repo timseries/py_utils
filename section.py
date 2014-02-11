@@ -33,7 +33,7 @@ class Section(object):
         ls_subsections = self.get_subsection_strings(str_key)
         return [Section(self.ps_parameters,str_section) for str_section in ls_subsections]
 
-    def get_val(self,str_key,lgc_val_numeric=False):
+    def get_val(self,str_key,lgc_val_numeric=False,default_value=0):
         """
         Returns the value corresponding to a key in this section, with defaults. 
 
@@ -44,9 +44,9 @@ class Section(object):
         or a list of ints.
         """       
         if lgc_val_numeric:
-            val = 0
+            val = default_value
         else:
-            val = ''
+            val = default_value
         if self.dict_section.has_key(str_key):
             val = self.ps_parameters.config.get(self.str_section,str_key).strip()
             if lgc_val_numeric:

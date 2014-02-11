@@ -15,7 +15,7 @@ class Input(Section):
         """       
         super(Input,self).__init__(ps_parameters,str_section)
         self.filedir = self.get_val('filedir', False)
-        self.filemember = self.get_val('filemember', False) #used for stuctured file
+        self.filemember = self.get_val('filemember', False) #used for structured file
         self.filename = self.get_val('filename', False)
         #use the config's dir as a reference pt if path not specified or not full
         self.filepath = self.filedir + self.filename
