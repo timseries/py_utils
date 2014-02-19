@@ -4,6 +4,8 @@ from numpy import arange, floor, mod
 from numpy import asarray as aa
 from py_utils.section import Section
 from py_utils.section_factory import SectionFactory as sf
+from py_utils.results.defaults import DEFAULT_CSV_EXT,DEFAULT_PARAMETERS_FILE
+
 #matplotlib.use('TkAgg')   #backend setting
 import pylab
 import matplotlib._pylab_helpers
@@ -12,6 +14,7 @@ import Tkinter
 import os
 import time
 import datetime
+import csv 
 
 class Results(Section):
     """
@@ -26,6 +29,8 @@ class Results(Section):
         self.ls_metric_names = self.get_val('metrics',False)
         if self.ls_metric_names.__class__.__name__ == 'str':
             self.ls_metric_names = [self.ls_metric_names]
+        else:
+            ValueError('need a string of metrics to create this')    
         self.ls_metrics = [sf.create_section(ps_parameters, self.ls_metric_names[i]) \
                            for i in arange(len(self.ls_metric_names))]
         self.grid_size = aa([self.get_val('figuregridwidth',True), \
@@ -36,7 +41,7 @@ class Results(Section):
         self.save_interval = self.get_val('saveinterval',True)
         self.output_directory = self.get_val('outputdirectory',False)
         
-        #get scrren info
+        #get screen info
         screen = os.popen("xrandr -q -d :0").readlines()[0]
         self.screen_size =  aa([int(screen.split()[7]), \
                                 int(screen.split()[9][:-1])], dtype = np.int)
@@ -49,7 +54,7 @@ class Results(Section):
             metric.update(dict_in)
             
     def save(self):
-        """Save the metrics in this results collection to file. This aggregates all fo the 'csv' output metrics together into one file for cleaner inclusion in 
+        """Save the metrics in this results collection to file. This aggregates all fo the 'csv' output metrics together into one csv file.
         """
         #create a folder in the output directory with the current minute's time stamp
         st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M:%S')
@@ -57,12 +62,19 @@ class Results(Section):
         if not os.path.exists(strDirectory):
             os.mkdir(strDirectory)
         #save the parameters to this folder as ini, and write as csv
-        self.ps_parameters.write(strDirectory+'ps_parameters.ini')
-        self.ps_parameters.write_csv(strDirectory+'ps_parameters.csv')
+        self.ps_parameters.write(strDirectory + DEFAULT_PARAMETERS_FILE + '.ini')
+        self.ps_parameters.write_csv(strDirectory + DEFAULT_PARAMETERS_FILE + '.' + DEFAULT_CSV_EXT)
+        #collect all of the metrics into a table (list of lists, one list per row)
+        int_rows = len(self.ls_metrics[0].data)
+        table = [[metric.data[j] for metric in self.ls_metrics] for j in xrange(int_rows) \
+                 if metric.output_format==DEFAULT_CSV_EXT]
         #start a new csv file, and save the csv metrics there
-        for metric in self.ls_metrics:
-            metric.save(dict_in)
-
+        headers = [metric.ylabel for metric in self.ls_metrics] 
+        with open(strDirectory + 'metrics.' + DEFAULT_CSV_EXT, 'w') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(headers)
+            writer.writerows(table)
+            
     def arrange_metric_windows(self):
         """
         Determine the grid placement of metric figure windows and assign figure numbers. 
@@ -80,14 +92,14 @@ class Results(Section):
             metric.w_coords = aa([int_col_offset * metric.w_size[0] + \
                                   self.desktop * self.screen_size[0], \
                                   int_row_offset * metric.w_size[1]])
-            #creating the metric's figures
+            #creating the Metrics' figure windows
             metric.figure_number = int_fig_offset + metric.figure_location
             metric.figure = plt.figure(metric.figure_number)
             wm = plt.get_current_fig_manager()
             wm.window.wm_geometry(str(metric.w_size[0]) + "x" + \
                                   str(metric.w_size[1]) + "+" + \
                                   str(metric.w_coords[0]) + "+" + \
-                                  str(metric.w_coords[1])) #does not work with MAC (pdatyet)
+                                  str(metric.w_coords[1]))
                                   
     def clear(self):
         """

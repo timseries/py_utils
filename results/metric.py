@@ -3,6 +3,8 @@ from numpy import arange, array
 from py_utils.section import Section
 import matplotlib
 import matplotlib.pyplot as plt
+from py_utils.results.defaults import DEFAULT_CSV_EXT
+
 class Metric(Section):
     """
     Base class for defining a metric. See :func:`py_utils.section.Section.__init__`.
@@ -32,8 +34,6 @@ class Metric(Section):
             self.data.append(value)
         if self.print_values:
             print self.get_val('key',False) + ':\t' + str(self.data[-1])  
-            
-    def save(self, output_file=None):        
          
     class Factory:
         def create(self,ps_parameters,str_section):

@@ -32,9 +32,9 @@ class ParameterStruct(object):
         if str_file_path == None or not exists(dirname(str_file_path)):
             ValueError('need a valid csv filepath')
             #build the headers
-            headers = [[self.section_names[i] + ":" + ...
-                        self.get_section_dict(self.section_names[i]).items()[j][0] ... 
-                        for j in xrange(len(self.get_section_dict(self.section_names[i]).items()))]...
+            headers = [[self.section_names[i] + ":" + \
+                        self.get_section_dict(self.section_names[i]).items()[j][0] \
+                        for j in xrange(len(self.get_section_dict(self.section_names[i]).items()))] \
                         for i in xrange(len(self.section_names))]
             fullheaders = [headers[i][j] for i in xrange(len(headers)) for j in xrange(len(headers[i]))]
             values = [self.get_section_dict(fullheaders[i].split(':')[0])[fullheaders[i].split(':')[1]] for i in xrange(len(fullheaders))]

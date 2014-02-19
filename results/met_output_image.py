@@ -2,9 +2,9 @@
 from py_utils.results.metric import Metric
 import numpy as np
 from libtiff import TIFF as tif
+from py_utils.results.defaults import DEFAULT_SLICE
 
 class OutputImage(Metric):
-    DEFAULT_SLICE = -1
     """
     Class for outputting and image or volume, and allowing a redraw/update.
     """
