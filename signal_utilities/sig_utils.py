@@ -28,7 +28,6 @@ def spectral_radius(op_transform, op_modality, tup_size):
     ary_alpha = zeros(ws_w.int_subbands)
     ary_temp = op_modality * ary_impulse # unused result, just to initialize with correct size
     ary_ms = op_modality.get_spectrum()
-    print 'spectrum output size: ' + str(ary_ms.shape)
     if tup_size != ary_ms.shape:
         ary_impulse = nd_impulse(ary_ms.shape)
         ws_w = op_transform * ary_impulse
@@ -38,11 +37,9 @@ def spectral_radius(op_transform, op_modality, tup_size):
     ary_alpha = zeros(ws_w.int_subbands,)
     #store the inband psd's (and conjugate)
     for s in ary_subbands:
-        print s
         ary_ss[:,s] = fftn(~op_transform * ws_w.one_subband(s)).flatten()
     #compute the inband and crossband psd maxima
     for s in ary_subbands:
-        print s
         for c in ary_subbands:
              ary_alpha[s] += nmax(absolute(conj(ary_ms * ary_ss[:,s]) * ary_ms * ary_ss[:,c]))
     #return the alpha array, upper-bounded to 1                      

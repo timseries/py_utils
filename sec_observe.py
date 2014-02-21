@@ -58,7 +58,6 @@ class Observe(Section):
             noise_pars['size'] = dict_in['x'].shape
             dict_in['noisevariance'] = noise_pars['variance']
             dict_in['n'] = noise_gen(noise_pars)
-            dict_in['nhat'] = fftn(noise_gen(noise_pars))
         else:
             ValueError('unsupported observation model')     
         #compute the forward model and initial estimate
@@ -69,7 +68,7 @@ class Observe(Section):
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
                 #regularized Wiener filtering in Fourier domain
                 H.output_fourier = 1
-                dict_in['x_0'] = ifftn(H.t() * dict_in['y'] /
+                dict_in['x_0'] = ifftn(~H * dict_in['y'] /
                                        (H.get_spectrum_sq() + 
                                         wrf * noise_pars['variance']))
                 H.output_fourier = 0

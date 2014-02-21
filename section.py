@@ -46,16 +46,18 @@ class Section(object):
         if lgc_val_numeric:
             val = default_value
         else:
-            val = default_value
+            val = ''
         if self.dict_section.has_key(str_key):
             val = self.ps_parameters.config.get(self.str_section,str_key).strip()
             if lgc_val_numeric:
                 #test for numeric arrays separated by a space
                 if ' ' in val: 
                     try: 
-                        val=array([int(val.split()[i]) for i in range(len(val.split()))])
+                        val=array([int(val.split()[i]) 
+                                   for i in range(len(val.split()))])
                     except ValueError:
-                        val=array([float(val.split()[i]) for i in range(len(val.split()))])
+                        val=array([float(val.split()[i]) 
+                                   for i in range(len(val.split()))])
                 else:
                     val1 = self.ps_parameters.config.getfloat(self.str_section,str_key)
                     try:
