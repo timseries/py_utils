@@ -6,14 +6,12 @@ from numpy.fft import fftn, ifftn
 from numpy.random import normal, rand, seed, poisson
 import itertools
 
-import pdb
-
 def nd_impulse(ary_size):
     ary_impulse = zeros(ary_size)
     ary_impulse[tuple(array(ary_impulse.shape)/2)] = 1
     return ary_impulse
 
-def spectral_radius(op_transform, op_modality, tup_size):
+def spectral_radius(op_transform, op_modality, tup_size, method='spectrum'):
     """Compute the specral radius including crossband energy
     :param op_transform: a transform operator which returns a ws object
     :param op_modality: some linear operator, 
@@ -28,7 +26,6 @@ def spectral_radius(op_transform, op_modality, tup_size):
     ary_alpha = zeros(ws_w.int_subbands)
     ary_temp = op_modality * ary_impulse # unused result, just to initialize with correct size
     ary_ms = op_modality.get_spectrum()
-    print 'spectrum output size: ' + str(ary_ms.shape)
     if tup_size != ary_ms.shape:
         ary_impulse = nd_impulse(ary_ms.shape)
         ws_w = op_transform * ary_impulse
@@ -38,11 +35,9 @@ def spectral_radius(op_transform, op_modality, tup_size):
     ary_alpha = zeros(ws_w.int_subbands,)
     #store the inband psd's (and conjugate)
     for s in ary_subbands:
-        print s
         ary_ss[:,s] = fftn(~op_transform * ws_w.one_subband(s)).flatten()
     #compute the inband and crossband psd maxima
     for s in ary_subbands:
-        print s
         for c in ary_subbands:
              ary_alpha[s] += nmax(absolute(conj(ary_ms * ary_ss[:,s]) * ary_ms * ary_ss[:,c]))
     #return the alpha array, upper-bounded to 1                      
