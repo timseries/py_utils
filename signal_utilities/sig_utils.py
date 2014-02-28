@@ -134,3 +134,17 @@ def colonvec(ary_small, ary_large):
 def crop(ary_signal, tup_crop_size):
     ary_half_difference = (array(ary_signal.shape) - array(tup_crop_size)) / 2
     return ary_signal[colonvec(ary_half_difference+1, ary_half_difference+array(tup_crop_size))]
+
+def gaussian(shape=(3,3),sigma=(0.5,0.5)):
+    """
+    2D gaussian - should give the same result as MATLAB's
+    fspecial('gaussian',[shape],[sigma])
+    """
+    m,n = [(ss-1.)/2. for ss in shape]
+    y,x = np.ogrid[-m:m+1,-n:n+1]
+    h = np.exp( -(x*x + y*y) / (2.*sigma[0]*sigma[1]) )
+    h[ h < np.finfo(h.dtype).eps*h.max() ] = 0
+    sumh = h.sum()
+    if sumh != 0:
+        h /= sumh
+    return h
