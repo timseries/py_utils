@@ -26,10 +26,10 @@ class Observe(Section):
     def __init__(self,ps_params,str_section):
         super(Observe,self).__init__(ps_params,str_section)
         self.str_type = self.get_val('observationtype',False)
-        self.H = OperatorComp(ps_params,
+        self.Phi = OperatorComp(ps_params,
                               self.get_val('modalities',False))
-        if len(self.H.ls_ops)==1: #avoid slow 'eval' in OperatorComp
-            self.H = self.H.ls_ops[0] 
+        if len(self.Phi.ls_ops)==1: #avoid slow 'eval' in OperatorComp
+            self.Phi = self.Phi.ls_ops[0] 
         self.W = OperatorComp(ps_params,
                               self.get_val('transforms',False))
         if len(self.W.ls_ops)==1: #avoid slow 'eval' in OperatorComp
@@ -50,7 +50,6 @@ class Observe(Section):
         if (self.str_type == 'convolution' or 
           self.str_type == 'convolution_poisson' or
           self.str_type == 'convolution_downsample'):
-            H = self.H
             wrf = nmax(self.get_val('wienerfactor',True),0.001)
             str_domain = self.get_val('domain',False)
             noise_pars = {} #build a dict to generate the noise
@@ -68,52 +67,49 @@ class Observe(Section):
         #compute the forward model and initial estimate
         if (self.str_type == 'convolution'):
             if not H.spatial:
+                H = self.Phi
                 H.set_output_fourier(False)
                 dict_in['Hx'] = H * dict_in['x']
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
                 #regularized Wiener filtering in Fourier domain
                 H.set_output_fourier(True)
                 dict_in['x_0'] = real(ifftn(~H * dict_in['y'] /
-                                       (H.get_spectrum_sq() + 
-                                        wrf * noise_pars['variance'])))
+                                            (H.get_spectrum_sq() + 
+                                             wrf * noise_pars['variance'])))
                 H.set_output_fourier(False)
             else:
                 ValueError('spatial domain convolution not supported')
             #compute bsnr    
                 self.compute_bsnr(dict_in,noise_pars)
         elif (self.str_type == 'convolution_downsample'):
+                Phi = self.Phi
+                D = Phi.ls_ops[1]
+                H = Phi.ls_ops[0]
                 H.set_output_fourier(False)
-                dict_in['Hx'] = H * dict_in['x']
-                # plt.imshow(dict_in['Hx'],cmap='gray')
-                # plt.show()
-                dict_in['n'] = H.ls_ops[1] * dict_in['n']
+                dict_in['Hx'] = Phi * dict_in['x']
+                dict_in['y_us'] = H * dict_in['x'] + dict_in['n']
+                dict_in['n'] = D * dict_in['n']
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
                 #this changes...
-                # plt.imshow(~H * dict_in['y'],cmap='gray')
-                # plt.show()
-                # DH=fftn(H.ls_ops[1]*ifftn(H.ls_ops[0].for_kernel_f))
-                # DH = (H.ls_ops[0] * dict_in['y'])
-                # DH = (H.ls_ops[0]).get_spectrum()
-                DH = fftn(H*nd_impulse(dict_in['x'].shape))
+                DH = fftn(Phi*nd_impulse(dict_in['x'].shape))
                 DHt = conj(DH)
                 plt.imshow(np.abs(DH),cmap='gray')
                 plt.show()
-
-                # Hyt=conj(DH)*fftn(dict_in['y'])
-                # Hyt=DHt*fftn(dict_in['y'])
-                Hyt=fftn(H.ls_ops[1]*(~H * dict_in['y']))
+                Hty=fftn(D*(~Phi * dict_in['y']))
+                # Hty=DHt*fftn(dict_in['y'])
                 plt.imshow(np.abs(fftn(DH)),cmap='gray')
                 plt.show()
-                # HtDtDH=fftn(~H*DH)
-                HtDtDH=DHt*DH
+                HtDtDH=np.real(DHt*DH)
                 plt.imshow(np.abs(HtDtDH),cmap='gray')
                 plt.show()
-                print np.mean(HtDtDH)
-                dict_in['x_0'] = ~H.ls_ops[1]*real(ifftn(Hyt /
-                                                        (HtDtDH + 
-                                                         wrf * noise_pars['variance'])))
-                plt.imshow(~H.ls_ops[1]*dict_in['y'],cmap='gray')
-                # plt.show()
+                print np.max(HtDtDH)
+                print dict_in['y'].shape
+                print Hty.shape
+                print HtDtDH.shape
+                dict_in['x_0'] = ~D*real(ifftn(Hty /
+                                               (HtDtDH + 
+                                                wrf * noise_pars['variance'])))
+                plt.imshow(~D*dict_in['y'],cmap='gray')
                 plt.imshow(dict_in['x_0'],cmap='gray')
                 plt.show()
                 self.compute_bsnr(dict_in,noise_pars)
