@@ -1,13 +1,17 @@
 #!/usr/bin/python -tt
-from py_utils.section import Section
-from numpy import max as nmax, conj, mean, log10
+import numpy as np
+from numpy import max as nmax, conj, mean, log10, real
 from numpy.linalg import norm
 from numpy import asarray as ar
 from numpy.fft import fftn, ifftn
-from py_operators.operator_comp import OperatorComp
 import warnings
-import numpy as np
+
+from py_utils.section import Section
 from py_utils.signal_utilities.sig_utils import nd_impulse, circshift, colonvec, noise_gen, crop
+from py_operators.operator_comp import OperatorComp
+
+import pdb 
+import matplotlib.pyplot as plt
 
 class Observe(Section):
     """
@@ -43,8 +47,9 @@ class Observe(Section):
         """
         warnings.simplefilter("ignore",np.ComplexWarning)
         #build the observation model parameters
-        if self.str_type == 'convolution' or \
-          self.str_type == 'convolution_poisson':
+        if (self.str_type == 'convolution' or 
+          self.str_type == 'convolution_poisson' or
+          self.str_type == 'convolution_downsample'):
             H = self.H
             wrf = nmax(self.get_val('wienerfactor',True),0.001)
             str_domain = self.get_val('domain',False)
@@ -58,28 +63,61 @@ class Observe(Section):
             noise_pars['size'] = dict_in['x'].shape
             dict_in['noisevariance'] = noise_pars['variance']
             dict_in['n'] = noise_gen(noise_pars)
-        else:
+        else:    
             ValueError('unsupported observation model')     
         #compute the forward model and initial estimate
-        if self.str_type == 'convolution':
+        if (self.str_type == 'convolution'):
             if not H.spatial:
-                H.output_fourier = 0
+                H.set_output_fourier(False)
                 dict_in['Hx'] = H * dict_in['x']
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
                 #regularized Wiener filtering in Fourier domain
-                H.output_fourier = 1
-                dict_in['x_0'] = ifftn(~H * dict_in['y'] /
+                H.set_output_fourier(True)
+                dict_in['x_0'] = real(ifftn(~H * dict_in['y'] /
                                        (H.get_spectrum_sq() + 
-                                        wrf * noise_pars['variance']))
-                H.output_fourier = 0
+                                        wrf * noise_pars['variance'])))
+                H.set_output_fourier(False)
             else:
                 ValueError('spatial domain convolution not supported')
             #compute bsnr    
-            Hx = dict_in['Hx'].flatten()
-            sig_sq = noise_pars['variance']
-            dict_in['bsnr'] = 10*log10((norm(Hx-mean(Hx),ord=2)**2) /
-                                       (Hx.size * sig_sq))
-            print 'observed with BSNR: ' + str(dict_in['bsnr'])
+                self.compute_bsnr(dict_in,noise_pars)
+        elif (self.str_type == 'convolution_downsample'):
+                H.set_output_fourier(False)
+                dict_in['Hx'] = H * dict_in['x']
+                # plt.imshow(dict_in['Hx'],cmap='gray')
+                # plt.show()
+                dict_in['n'] = H.ls_ops[1] * dict_in['n']
+                dict_in['y'] = dict_in['Hx']+dict_in['n']
+                #this changes...
+                # plt.imshow(~H * dict_in['y'],cmap='gray')
+                # plt.show()
+                # DH=fftn(H.ls_ops[1]*ifftn(H.ls_ops[0].for_kernel_f))
+                # DH = (H.ls_ops[0] * dict_in['y'])
+                # DH = (H.ls_ops[0]).get_spectrum()
+                DH = fftn(H*nd_impulse(dict_in['x'].shape))
+                DHt = conj(DH)
+                plt.imshow(np.abs(DH),cmap='gray')
+                plt.show()
+
+                # Hyt=conj(DH)*fftn(dict_in['y'])
+                # Hyt=DHt*fftn(dict_in['y'])
+                Hyt=fftn(H.ls_ops[1]*(~H * dict_in['y']))
+                plt.imshow(np.abs(fftn(DH)),cmap='gray')
+                plt.show()
+                # HtDtDH=fftn(~H*DH)
+                HtDtDH=DHt*DH
+                plt.imshow(np.abs(HtDtDH),cmap='gray')
+                plt.show()
+                print np.mean(HtDtDH)
+                dict_in['x_0'] = ~H.ls_ops[1]*real(ifftn(Hyt /
+                                                        (HtDtDH + 
+                                                         wrf * noise_pars['variance'])))
+                plt.imshow(~H.ls_ops[1]*dict_in['y'],cmap='gray')
+                # plt.show()
+                plt.imshow(dict_in['x_0'],cmap='gray')
+                plt.show()
+                self.compute_bsnr(dict_in,noise_pars)
+                
         elif self.str_type == 'convolution_poisson':
             dict_in['mp'] = self.get_val('maximumphotonspervoxel',True)
             dict_in['b'] = self.get_val('background', True)
@@ -131,6 +169,14 @@ class Observe(Section):
             raise Exception('cs observation not supported yet')    
         else:
             raise Exception('no observation type: ' + self.str_type)
+
+    def compute_bsnr(self,dict_in,noise_pars):
+        Hx = dict_in['Hx'].flatten()
+        sig_sq = noise_pars['variance']
+        dict_in['bsnr'] = 10*log10((norm(Hx-mean(Hx),ord=2)**2) /
+                                   (Hx.size * sig_sq))
+        print 'observed with BSNR: ' + str(dict_in['bsnr'])
+        
 
     class Factory:
         def create(self,ps_params,str_section):
