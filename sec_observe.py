@@ -89,7 +89,8 @@ class Observe(Section):
                 H.set_output_fourier(False)
                 dict_in['Hx'] = Phi * dict_in['x']
                 dict_in['y_us'] = H * dict_in['x'] + dict_in['n']
-                dict_in['y_D'] = dict_in['y_us'][0::1,1::2]#odd columns
+                # dict_in['y_D'] = dict_in['y_us'][0::1,1::2]#odd columns
+                dict_in['y_D'] = np.zeros(dict_in['y_us'][0::1,1::2].shape)
                 dict_in['n'] = D * dict_in['n']
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
                 #this changes...
@@ -123,7 +124,7 @@ class Observe(Section):
                 grid_z = griddata(points,values,(grid_x,grid_y),method='cubic',fill_value=0.0)
                 print grid_z.shape
                 # dict_in['x_0'][0::1,1::2]=grid_z
-                # dict_in['x_0'][0::1,1::2]=grid_z[0::1,1::2]
+                dict_in['x_0'][0::1,1::2]=grid_z[0::1,1::2]
                 plt.imshow(~D*dict_in['y'],cmap='gray')
                 plt.imshow(dict_in['x_0'],cmap='gray')
                 plt.show()
@@ -170,7 +171,7 @@ class Observe(Section):
                 dict_in['y_padded'] = np.zeros(orig_shape)
                 dict_in['y_padded'][slices] = dict_in['y']
                 #simple adjoint to find initial solutino
-                #dict_in['x_0'] = ((~H) * (dict_in['y'])).astype(dtype='float32')
+                dict_in['x_0'] = ((~H) * (dict_in['y'])).astype(dtype='float32')
                 #dict_in['x_0'] = np.real(ifftn(fftn(~H * dict_in['y']) / \
                 #(conj(H.get_spectrum()) * H.get_spectrum() + wrf * noise_pars['variance'])))
             else:
