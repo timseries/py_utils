@@ -4,6 +4,7 @@ from numpy import max as nmax, conj, mean, log10, real
 from numpy.linalg import norm
 from numpy import asarray as ar
 from numpy.fft import fftn, ifftn
+from scipy.interpolate import griddata
 import warnings
 
 from py_utils.section import Section
@@ -88,6 +89,7 @@ class Observe(Section):
                 H.set_output_fourier(False)
                 dict_in['Hx'] = Phi * dict_in['x']
                 dict_in['y_us'] = H * dict_in['x'] + dict_in['n']
+                dict_in['y_D'] = dict_in['y_us'][0::1,1::2]#odd columns
                 dict_in['n'] = D * dict_in['n']
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
                 #this changes...
@@ -109,6 +111,19 @@ class Observe(Section):
                 dict_in['x_0'] = ~D*real(ifftn(Hty /
                                                (HtDtDH + 
                                                 wrf * noise_pars['variance'])))
+                #interpolation
+                grid_x,grid_y = np.mgrid[0:(dict_in['x_0'].shape[0]),0:(dict_in['x_0'].shape[1])]
+                points = np.mgrid[0:(dict_in['x_0'].shape[0]),0:(dict_in['x_0'].shape[1]):2]
+                pointsx= points[0,...].flatten()
+                pointsy= points[1,...].flatten()
+                points = np.vstack([pointsx,pointsy]).transpose()
+                print points.size
+                values = dict_in['x_0'][pointsx,pointsy]
+                print values.size
+                grid_z = griddata(points,values,(grid_x,grid_y),method='cubic',fill_value=0.0)
+                print grid_z.shape
+                # dict_in['x_0'][0::1,1::2]=grid_z
+                # dict_in['x_0'][0::1,1::2]=grid_z[0::1,1::2]
                 plt.imshow(~D*dict_in['y'],cmap='gray')
                 plt.imshow(dict_in['x_0'],cmap='gray')
                 plt.show()
