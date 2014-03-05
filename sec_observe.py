@@ -67,7 +67,6 @@ class Observe(Section):
             ValueError('unsupported observation model')     
         #compute the forward model and initial estimate
         if (self.str_type == 'convolution'):
-            if not H.spatial:
                 H = self.Phi
                 H.set_output_fourier(False)
                 dict_in['Hx'] = H * dict_in['x']
@@ -78,8 +77,6 @@ class Observe(Section):
                                             (H.get_spectrum_sq() + 
                                              wrf * noise_pars['variance'])))
                 H.set_output_fourier(False)
-            else:
-                ValueError('spatial domain convolution not supported')
             #compute bsnr    
                 self.compute_bsnr(dict_in,noise_pars)
         elif (self.str_type == 'convolution_downsample'):

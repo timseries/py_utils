@@ -3,8 +3,10 @@ from operator import add
 import numpy as np
 from numpy import max as nmax, absolute, conj, arange, zeros, array
 from numpy.fft import fftn, ifftn
+from numpy.linalg import norm
 from numpy.random import normal, rand, seed, poisson
 import itertools
+import pdb
 
 def nd_impulse(ary_size):
     ary_impulse = zeros(ary_size)
@@ -12,38 +14,77 @@ def nd_impulse(ary_size):
     return ary_impulse
 
 def spectral_radius(op_transform, op_modality, tup_size, method='spectrum'):
-    """Compute the specral radius including crossband energy
+    """Compute the specral radius (the dominant eigenvalues) of the composition of op_transform and op_modality.
     :param op_transform: a transform operator which returns a ws object
     :param op_modality: some linear operator, 
      assumes this is diagonalizable by the fft (e.g. convolution)
     :param tup_size: size of impulse used...
+    :param method: the available methods for computing these weights (spectrum or power_iteration)
     :returns ary_lambda_alpha, a vector of subband weights which upperbounds the spectral radius
     
     .. codeauthor:: Timothy Roberts <timothy.daniel.roberts@gmail.com>, 2013
     """
-    ary_impulse = nd_impulse(tup_size)
-    ws_w = op_transform * ary_impulse
-    ary_alpha = zeros(ws_w.int_subbands)
-    ary_temp = op_modality * ary_impulse # unused result, just to initialize with correct size
-    ary_ms = op_modality.get_spectrum()
-    if tup_size != ary_ms.shape:
-        ary_impulse = nd_impulse(ary_ms.shape)
+    if method=='spectrum':
+        ary_impulse = nd_impulse(tup_size)
         ws_w = op_transform * ary_impulse
-    ary_ms = ary_ms.flatten()
-    ary_subbands = arange(ws_w.int_subbands)
-    ary_ss = zeros([ary_ms.shape[0],ws_w.int_subbands],dtype='complex64')
-    ary_alpha = zeros(ws_w.int_subbands,)
-    #store the inband psd's (and conjugate)
-    for s in ary_subbands:
-        ary_ss[:,s] = fftn(~op_transform * ws_w.one_subband(s)).flatten()
-    #compute the inband and crossband psd maxima
-    for s in ary_subbands:
-        for c in ary_subbands:
-             ary_alpha[s] += nmax(absolute(conj(ary_ms * ary_ss[:,s]) * ary_ms * ary_ss[:,c]))
-    #return the alpha array, upper-bounded to 1                      
-    ary_alpha = np.minimum(ary_alpha,1)
+        ary_alpha = zeros(ws_w.int_subbands)
+        ary_temp = op_modality * ary_impulse # unused result, just to initialize with correct size
+        ary_ms = op_modality.get_spectrum()
+        if tup_size != ary_ms.shape:
+            ary_impulse = nd_impulse(ary_ms.shape)
+            ws_w = op_transform * ary_impulse
+        ary_ms = ary_ms.flatten()
+        ary_subbands = arange(ws_w.int_subbands)
+        ary_ss = zeros([ary_ms.shape[0],ws_w.int_subbands],dtype='complex64')
+        ary_alpha = zeros(ws_w.int_subbands,)
+        #store the inband psd's (and conjugate)
+        for s in ary_subbands:
+            ary_ss[:,s] = fftn(~op_transform * ws_w.one_subband(s)).flatten()
+        #compute the inband and crossband psd maxima
+        for s in ary_subbands:
+            for c in ary_subbands:
+                 ary_alpha[s] += nmax(absolute(conj(ary_ms * ary_ss[:,s]) * ary_ms * ary_ss[:,c]))
+        #return the alpha array, upper-bounded to 1                      
+        ary_alpha = np.minimum(ary_alpha,1.0)
+        
+    elif method=='power_iteration':
+        W = op_transform
+        Phi = op_modality
+        ws_rv = op_transform * rand(*tup_size) #random vector
+        ary_eigs = np.zeros(ws_rv.int_subbands)
+        for s in xrange(ws_rv.int_subbands):
+            ws_ss = ws_rv.one_subband(s)
+            i = 0
+            while i < 30:
+                ws_ss = A(W,Phi,ws_ss) #to image domain
+                ws_ss = At(W,Phi,ws_ss) #back to wavelet domain
+                # pdb.set_trace()
+                ws_ss_norm = norm(ws_ss.flatten(),2)
+                for s2 in xrange(ws_ss.int_subbands):
+                    ws_ss.set_subband(s2,ws_ss.get_subband(s2)/ws_ss_norm)
+                i += 1    
+                ws_ss = ws_ss.one_subband(s)    
+            AtAws_ss = A(W,Phi,ws_ss)
+            AtAws_ss = At(W,Phi,AtAws_ss).flatten()
+            print np.sum(ws_ss.flatten().transpose() * AtAws_ss)
+            print ws_ss_norm
+            ary_eigs[s] = np.sum(ws_ss.flatten().transpose() * AtAws_ss) / ws_ss_norm
+            print ary_eigs[s]
+            print ary_eigs
+        ary_alpha = np.minimum(ary_eigs,1.0)
+    else:
+        ValueError('method ' + method + ' unsupported')
+                
     print ary_alpha
     return ary_alpha
+
+
+def A(op_transform,op_modality,mcand):
+    return op_modality * (~op_transform * mcand)
+
+def At(op_transform,op_modality,mcand):
+    return op_transform * (~op_modality * mcand)
+
 
 def circshift(ary_input, tup_shifts):
     """Shift multi-dimensional array circularly.

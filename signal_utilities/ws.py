@@ -69,7 +69,7 @@ class WS(object):
 
     def get_subband_sc(self,int_subband_index):
         """
-        For a given subband index, returns the corresponding subband as ndarray
+        For a given subband index, returns the corresponding scaling coefficient as ndarray
         """ 
         int_level, int_orientation = self.lev_ori_from_subband(int_subband_index)
         return self.tup_scaling[int_level]
@@ -153,6 +153,7 @@ class WS(object):
                     self.ws_vector[int_last_stride+1:int_this_stride:self.int_if] = np.real(ary_tup_coeffs)
                 else:    
                     self.ws_vector[int_last_stride+1:int_this_stride:self.int_if] = np.imag(ary_tup_coeffs)
+        return self.ws_vector
 
 
     def unflatten(self):
