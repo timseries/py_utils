@@ -1,5 +1,5 @@
 #!/usr/bin/python -tt
-from numpy import arange, array
+from numpy import arange, array, maximum, zeros
 from py_utils.section import Section
 import matplotlib
 import matplotlib.pyplot as plt
@@ -24,10 +24,18 @@ class Metric(Section):
         self.title = self.get_val('title',False)
         self.print_values = self.get_val('print',True)
         self.output_format = self.get_val('outputformat',False,'csv')
+        self.crop_plot = self.get_val('cropplot',True) #2 element vector, beginning and end to crop for plotting
+        self.crop_plot = maximum(zeros(2),self.crop_plot)
 
     def plot(self):
         plt.figure(self.figure_number)
-        plt.plot(array(self.data))
+        
+        slice_start = self.crop_plot[0]
+        slice_end = self.crop_plot[1]
+        if slice_end==0:
+            slice_end = None
+        sl=slice(slice_start,slice_end)
+        plt.plot(array(self.data)[sl])
 
     def update(self, value=None):
         if value != None:

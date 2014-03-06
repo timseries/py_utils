@@ -86,26 +86,20 @@ class Observe(Section):
                 H.set_output_fourier(False)
                 dict_in['Hx'] = Phi * dict_in['x']
                 dict_in['y_us'] = H * dict_in['x'] + dict_in['n']
-                # dict_in['y_D'] = dict_in['y_us'][0::1,1::2]#odd columns
                 dict_in['y_D'] = np.zeros(dict_in['y_us'][0::1,1::2].shape)
                 dict_in['n'] = D * dict_in['n']
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
-                #this changes...
                 DH = fftn(Phi*nd_impulse(dict_in['x'].shape))
                 DHt = conj(DH)
-                plt.imshow(np.abs(DH),cmap='gray')
-                plt.show()
+                # plt.imshow(np.abs(DH),cmap='gray')
+                # plt.show()
                 Hty=fftn(D*(~Phi * dict_in['y']))
                 # Hty=DHt*fftn(dict_in['y'])
-                plt.imshow(np.abs(fftn(DH)),cmap='gray')
-                plt.show()
+                # plt.imshow(np.abs(fftn(DH)),cmap='gray')
+                # plt.show()
                 HtDtDH=np.real(DHt*DH)
-                plt.imshow(np.abs(HtDtDH),cmap='gray')
-                plt.show()
-                print np.max(HtDtDH)
-                print dict_in['y'].shape
-                print Hty.shape
-                print HtDtDH.shape
+                # plt.imshow(np.abs(HtDtDH),cmap='gray')
+                # plt.show()
                 dict_in['x_0'] = ~D*real(ifftn(Hty /
                                                (HtDtDH + 
                                                 wrf * noise_pars['variance'])))
@@ -115,16 +109,13 @@ class Observe(Section):
                 pointsx= points[0,...].flatten()
                 pointsy= points[1,...].flatten()
                 points = np.vstack([pointsx,pointsy]).transpose()
-                print points.size
                 values = dict_in['x_0'][pointsx,pointsy]
-                print values.size
                 grid_z = griddata(points,values,(grid_x,grid_y),method='cubic',fill_value=0.0)
-                print grid_z.shape
                 # dict_in['x_0'][0::1,1::2]=grid_z
                 dict_in['x_0'][0::1,1::2]=grid_z[0::1,1::2]
-                plt.imshow(~D*dict_in['y'],cmap='gray')
-                plt.imshow(dict_in['x_0'],cmap='gray')
-                plt.show()
+                # plt.imshow(~D*dict_in['y'],cmap='gray')
+                # plt.imshow(dict_in['x_0'],cmap='gray')
+                # plt.show()
                 self.compute_bsnr(dict_in,noise_pars)
                 
         elif self.str_type == 'convolution_poisson':

@@ -1,7 +1,7 @@
 #!/usr/bin/python -tt
 from operator import add
 import numpy as np
-from numpy import max as nmax, absolute, conj, arange, zeros, array
+from numpy import max as nmax, absolute, conj, arange, zeros, array, median
 from numpy.fft import fftn, ifftn
 from numpy.linalg import norm
 from numpy.random import normal, rand, seed, poisson
@@ -102,7 +102,7 @@ def circshift(ary_input, tup_shifts):
        is positive, the values of `a` are shifted down (or to the
        right). If it is negative, the values of `a` are shifted up (or
        to the left).
-  
+
     Returns
     -------
     y : ndarray
@@ -171,6 +171,73 @@ def colonvec(ary_small, ary_large):
     indices = [np.s_[ary_small[i]-1:ary_large[i]] for i in np.arange(int_max)]
     return indices
 
+def get_neighborhoods(ary_input,n_size):
+    """
+    Given an array, return the neighborhoods of size n_size along a new axis.
+
+    The return value is a tuple of values and a logical mask. The values are the elements of the neighborhood,
+    and the mask tells you which (since not all neighborhoods are the same size) elements are valid
+
+    Here, x's show a neighborhood of coefficient 'o' size 1 for a 2-d array:
+    a b c 
+    d o e
+    f g h
+
+    The function would return 9 arrays of the same size of 1. values and 2. masks. Here is the first of 1 arrays
+    value:
+    o e d 
+    g h f
+    b c a
+    mask:
+    True True False
+    True True False
+    False False False
+
+    This makes it convenient for performing vector operations (e.g. average) on the neighborhoods, which is the whole reason for writing this function.
+    
+    """
+    #calculate shifts
+    dims = ary_input.ndim
+    iter_dims = xrange(dims)
+    grid = np.mgrid[[slice(-n_size,n_size+1 ,None) for i in iter_dims]]
+    shifts = np.vstack([grid[i,...].flatten() for i in iter_dims]).transpose()
+    iter_shifts = xrange(len(shifts))
+    neighborhoods = [circshift(ary_input,tuple(shifts[i])) for i in iter_shifts]
+    #now we have to zeroize the rows,columns,etc where edges have been shifted in
+    for i in iter_shifts:
+        ls_slices = shift_slices(shifts[i])
+        if ls_slices!=[]:
+            for j in xrange(len(ls_slices)):             
+                neighborhoods[i][ls_slices[j]]=np.nan
+    neighborhoods = np.concatenate([neighborhoods[i][...,np.newaxis] for i in iter_shifts],axis=dims)
+    mask = ~np.isnan(neighborhoods)
+    neighborhoods[~mask]=0
+    return tuple([neighborhoods,mask])
+
+def shift_slices(shift):
+    """calculate the slices corresponding to a given set of shifts
+    e.g. shift=(-1,-1) would give a list of lists of slices : [[slice(-1,None,None),slice(None,None,None)],
+                                                              [slice(None,None,None),slice(-1,None,None)]]
+    """
+    ls_slices = []
+    iter_shifts = xrange(len(shift))
+    if np.all(shift==0): #just return empty list for indexing nothing
+        return []
+    eslice = slice(None,None,None)
+    for k in iter_shifts:
+        if shift[k]!=0:
+            slices = []
+            for j in iter_shifts:
+                if j==k:
+                    if shift[k]<0:
+                        sl=slice(shift[k],None,None)
+                    else: #shift[k]>0:    
+                        sl=slice(None,shift[k],None)
+                else:
+                    sl=eslice        
+                slices.append(sl)
+            ls_slices.append(slices)
+    return ls_slices            
 
 def crop(ary_signal, tup_crop_size):
     ary_half_difference = (array(ary_signal.shape) - array(tup_crop_size)) / 2
@@ -189,3 +256,6 @@ def gaussian(shape=(3,3),sigma=(0.5,0.5)):
     if sumh != 0:
         h /= sumh
     return h
+
+def mad(data, axis=None):
+    return median(absolute(data - median(data, axis)), axis)
