@@ -16,6 +16,8 @@ import time
 import datetime
 import csv 
 
+import pdb
+
 class Results(Section):
     """
     Class for defining a collection of metrics to update. Contains methods to 
@@ -33,6 +35,12 @@ class Results(Section):
             ValueError('need a string of metrics to create this')    
         self.ls_metrics = [sf.create_section(ps_parameters, self.ls_metric_names[i]) \
                            for i in arange(len(self.ls_metric_names))]
+        self.ls_metrics_csv = [self.ls_metrics[i] 
+                               for i in arange(len(self.ls_metrics))
+                               if self.ls_metrics[i].has_csv]                   
+        self.ls_metrics_no_csv = [self.ls_metrics[i] 
+                                  for i in arange(len(self.ls_metrics))
+                                  if not self.ls_metrics[i].has_csv]                   
         self.grid_size = aa([self.get_val('figuregridwidth',True), \
                              self.get_val('figuregridheight',True)], dtype = np.int)
         self.desktop = self.get_val('desktop',True)
@@ -40,6 +48,8 @@ class Results(Section):
         self.int_overlap = max(5,self.get_val('overlap',True))
         self.save_interval = self.get_val('saveinterval',True)
         self.output_directory = self.get_val('outputdirectory',False)
+        self.output_filename = self.get_val('outputfilename',False)
+        self.overwrite_results = self.get_val('overwriteresults',True)
         
         #get screen info
         screen = os.popen("xrandr -q -d :0").readlines()[0]
@@ -54,26 +64,36 @@ class Results(Section):
             metric.update(dict_in)
             
     def save(self):
-        """Save the metrics in this results collection to file. This aggregates all fo the 'csv' output metrics together into one csv file.
+        """Save the metrics in this results collection to file. 
+        This aggregates all fo the 'csv' output metrics together into one csv file.
+        The other metrics are dealt with separately.
         """
         #create a folder in the output directory with the current minute's time stamp
-        st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M:%S')
-        strDirectory = self.output_directory + '/' + st + '/'
+        st = '/'
+        if not self.overwrite_results:
+            st = '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M:%S')
+        strDirectory = self.output_directory + st
         if not os.path.exists(strDirectory):
             os.mkdir(strDirectory)
         #save the parameters to this folder as ini, and write as csv
-        self.ps_parameters.write(strDirectory + DEFAULT_PARAMETERS_FILE + '.ini')
-        self.ps_parameters.write_csv(strDirectory + DEFAULT_PARAMETERS_FILE + '.' + DEFAULT_CSV_EXT)
+        self.ps_parameters.write(strDirectory + self.output_filename + '.ini')
+        self.ps_parameters.write_csv(strDirectory + self.output_filename + '.' + DEFAULT_CSV_EXT)
         #collect all of the metrics into a table (list of lists, one list per row)
+        #these metrics can be written to a csv file
         int_rows = len(self.ls_metrics[0].data)
-        table = [[metric.data[j] for metric in self.ls_metrics] for j in xrange(int_rows) \
-                 if metric.output_format==DEFAULT_CSV_EXT]
+        table = [[j] + [metric.data[j] for metric in self.ls_metrics_csv] 
+                  for j in xrange(int_rows)]
+        # pdb.set_trace()
         #start a new csv file, and save the csv metrics there
-        headers = [metric.ylabel for metric in self.ls_metrics] 
-        with open(strDirectory + 'metrics.' + DEFAULT_CSV_EXT, 'w') as csvfile:
+        headers = [metric.key for metric in self.ls_metrics] 
+        headers.insert(0,'n')
+        with open(strDirectory + self.output_filename + '.' + DEFAULT_CSV_EXT, 'w') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(headers)
             writer.writerows(table)
+        #save the other metrics to file by invoking their respective save methods
+        for metric in self.ls_metrics_no_csv:
+            metric.save(strDirectory + self.output_filename)
             
     def arrange_metric_windows(self):
         """
@@ -100,7 +120,7 @@ class Results(Section):
                                   str(metric.w_size[1]) + "+" + \
                                   str(metric.w_coords[0]) + "+" + \
                                   str(metric.w_coords[1]))
-                                  
+
     def clear(self):
         """
         Clear the data out of the metrics 

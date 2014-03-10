@@ -46,7 +46,10 @@ class Section(object):
         if lgc_val_numeric:
             val = default_value
         else:
-            val = ''
+            if default_value == 0:
+                val = ''
+            else:
+                val = default_value
         if self.dict_section.has_key(str_key):
             val = self.ps_parameters.config.get(self.str_section,str_key).strip()
             if lgc_val_numeric:

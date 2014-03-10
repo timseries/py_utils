@@ -21,11 +21,12 @@ class Metric(Section):
         self.figure_number = None
         self.data = []
         self.ylabel = self.get_val('ylabel',False)
+        self.key = self.get_val('key',False)
         self.title = self.get_val('title',False)
         self.print_values = self.get_val('print',True)
         self.output_format = self.get_val('outputformat',False,'csv')
-        self.crop_plot = self.get_val('cropplot',True) #2 element vector, beginning and end to crop for plotting
-        self.crop_plot = maximum(zeros(2),self.crop_plot)
+        self.crop_plot = maximum(zeros(2),self.get_val('cropplot',True)) #2 element vector, beginning and end to crop for plotting
+        self.has_csv = self.get_val('hascsv',True,True)
 
     def plot(self):
         plt.figure(self.figure_number)
@@ -42,6 +43,8 @@ class Metric(Section):
             self.data.append(value)
         if self.print_values:
             print self.get_val('key',False) + ':\t' + str(self.data[-1])  
+
+    def save(self,strPath='/home/'): pass
          
     class Factory:
         def create(self,ps_parameters,str_section):
