@@ -34,6 +34,7 @@ class OutputImage(Metric):
         :param dict_in: Input dictionary which contains the referenece to the image/volume data to display and record. 
         """
         if self.data == []:
+            # self.x = dict_in['y_us']
             self.slices = [slice(0,None,None) if i < 2 else 
                            slice(max(0,min(self.slice,dict_in['x_n'].shape[i])),None,None) 
                            for i in xrange(dict_in['x_n'].ndim)]
@@ -49,18 +50,23 @@ class OutputImage(Metric):
     def save(self,strPath='/home/outputimage'):
         strPath = strPath + '.' + self.output_extension
         write_data = self.data[-1][self.slices]
+        # write_data = self.x
+        #need to clip the output range to the input range
+        write_data[write_data<self.input_range[0]]=self.input_range[0]
+        write_data[write_data>self.input_range[1]]=self.input_range[1]
         if self.output_extension=='png':
             f = open(strPath,'wb')
             w = png.Writer(*(write_data.shape),greyscale=True)
-            #need to clip the output range to the input range
-            write_data[write_data<self.input_range[0]]=self.input_range[0]
-            write_data[write_data>self.input_range[1]]=self.input_range[1]
             w.write(f,write_data)
             f.close()
         elif self.output_extension=='eps':
-            outf=open(strPath,'wb')
-            Image.save(outf, 'EPS')
-
+            fig = plt.figure()
+            ax = plt.Axes(fig,[0,0,1,1])
+            ax.set_axis_off()
+            fig.add_axes(ax)
+            ax.imshow(write_data,cmap='gray')
+            plt.savefig(strPath, format="eps",bbox_inches='tight')
+            
         elif self.output_extension=='tif':
             #saving as tiff
             if self.last_frame_only:

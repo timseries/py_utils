@@ -69,6 +69,9 @@ class Results(Section):
         The other metrics are dealt with separately.
         """
         #create a folder in the output directory with the current minute's time stamp
+        if self.outputdirectory=='':
+            print ('Not writing results to file no output dir specified')
+            return None
         st = '/'
         if not self.overwrite_results:
             st = '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M:%S')
@@ -85,7 +88,7 @@ class Results(Section):
                   for j in xrange(int_rows)]
         # pdb.set_trace()
         #start a new csv file, and save the csv metrics there
-        headers = [metric.key for metric in self.ls_metrics] 
+        headers = [metric.key for metric in self.ls_metrics_csv] 
         headers.insert(0,'n')
         with open(strDirectory + self.output_filename + '.' + DEFAULT_CSV_EXT, 'w') as csvfile:
             writer = csv.writer(csvfile)

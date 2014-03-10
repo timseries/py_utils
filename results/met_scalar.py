@@ -12,6 +12,7 @@ class Scalar(Metric):
         """       
         super(Scalar,self).__init__(ps_parameters,str_section)        
         self.lgc_stop = False
+        
     def update(self,dict_in):
         """
         Expects a single value or array. If array, store the whole vector and stop.
