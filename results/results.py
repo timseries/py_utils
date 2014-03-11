@@ -69,7 +69,7 @@ class Results(Section):
         The other metrics are dealt with separately.
         """
         #create a folder in the output directory with the current minute's time stamp
-        if self.outputdirectory=='':
+        if self.output_directory=='':
             print ('Not writing results to file no output dir specified')
             return None
         st = '/'

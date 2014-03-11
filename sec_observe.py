@@ -86,7 +86,6 @@ class Observe(Section):
                 H.set_output_fourier(False)
                 dict_in['Hx'] = Phi * dict_in['x']
                 dict_in['y_us'] = H * dict_in['x'] + dict_in['n']
-                dict_in['y_us'][0::1,1::2] = 0
                 dict_in['y_D'] = np.zeros(dict_in['y_us'][0::1,1::2].shape)
                 dict_in['n'] = D * dict_in['n']
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
