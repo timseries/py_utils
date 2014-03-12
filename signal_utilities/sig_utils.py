@@ -6,6 +6,7 @@ from numpy.fft import fftn, ifftn
 from numpy.linalg import norm
 from numpy.random import normal, rand, seed, poisson
 import itertools
+
 import pdb
 
 def nd_impulse(ary_size):
@@ -209,7 +210,8 @@ def get_neighborhoods(ary_input,n_size):
         if ls_slices!=[]:
             for j in xrange(len(ls_slices)):             
                 neighborhoods[i][ls_slices[j]]=np.nan
-    neighborhoods = np.concatenate([neighborhoods[i][...,np.newaxis] for i in iter_shifts],axis=dims)
+    neighborhoods = np.concatenate([neighborhoods[i][...,np.newaxis] 
+                                    for i in iter_shifts],axis=dims)
     mask = ~np.isnan(neighborhoods)
     neighborhoods[~mask]=0
     return tuple([neighborhoods,mask])
@@ -239,6 +241,23 @@ def shift_slices(shift):
             ls_slices.append(slices)
     return ls_slices            
 
+def downsample_slices(int_dim):
+    """Return a list of list of slices used for downsampling by a factor of 2
+    in every dimension, with appropriate offsets
+    """
+    num_slices = 2**int_dim
+    return [[slice(dec_to_bin(j,int_dim)[i],None,2) for i in xrange(int_dim)] for j in xrange(num_slices)]
+            
+def dec_to_bin(int_decimal,width=None):
+    """returns int_decimal as a list of binary digits, with the lsbit
+    being the first element, with msb padding
+    """ 
+    bin_string = bin(int_decimal)
+    bin_width = len(bin_string)-2
+    if width == None:
+        width=bin_width
+    return [int(bin_string[i]) for i in xrange(bin_width+1,1,-1)] + (width-bin_width)*[0] 
+    
 def crop(ary_signal, tup_crop_size):
     ary_half_difference = (array(ary_signal.shape) - array(tup_crop_size)) / 2
     return ary_signal[colonvec(ary_half_difference+1, ary_half_difference+array(tup_crop_size))]

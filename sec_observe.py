@@ -112,7 +112,7 @@ class Observe(Section):
                 values = dict_in['x_0'][pointsx,pointsy]
                 grid_z = griddata(points,values,(grid_x,grid_y),method='cubic',fill_value=0.0)
                 # dict_in['x_0'][0::1,1::2]=grid_z
-                dict_in['x_0'][0::1,1::2]=grid_z[0::1,1::2]
+                # dict_in['x_0'][0::1,1::2]=grid_z[0::1,1::2]
                 # plt.imshow(~D*dict_in['y'],cmap='gray')
                 # plt.imshow(dict_in['x_0'],cmap='gray')
                 # plt.show()

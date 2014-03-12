@@ -1,9 +1,14 @@
 #!/usr/bin/python -tt
 import numpy as np
+from operator import add
+from numpy import concatenate as cat
 from copy import deepcopy
 import theano
 from theano import tensor as T
+from py_utils.signal_utilities.sig_utils import downsample_slices
 import itertools as it
+
+import pdb
 
 class WS(object):
     """
@@ -21,6 +26,7 @@ class WS(object):
         self.ary_size = np.dot(2,ary_lowpass.shape) 
         self.int_levels = len(tup_coeffs)
         self.int_dimension = ary_lowpass.ndim
+        self.ds_slices = downsample_slices(self.int_dimension)
         self.int_orientations = tup_coeffs[0].shape[-1]
         self.int_subbands = self.int_levels * self.int_orientations + 1
         self.dims = None #dimensions of all of the subbands
@@ -73,7 +79,61 @@ class WS(object):
         """ 
         int_level, int_orientation = self.lev_ori_from_subband(int_subband_index)
         return self.tup_scaling[int_level]
-    
+
+    def get_upsampled_parent(self,s):
+        """
+        Returns the upsampled parent of s, by copying the elements of the parent.
+        The output array should be the same size as s.
+        """
+        if s+self.int_orientations>=self.int_subbands:
+            #we actually need to downsample in this case, as we're using the scaling coefficients
+            subband_index = 0
+        else:
+            subband_index = s+self.int_orientations
+        if subband_index==0: #downsample by averaging
+            # pdb.set_trace()
+            s_parent_us = self.subband_group_sum(subband_index,'children')[self.ds_slices[0]]
+        else:
+            s_parent = self.get_subband(subband_index)
+            s_parent_us = np.zeros(2*np.asarray(s_parent.shape))
+            #todo: generalize this to arbitrary dimensions
+            for j in xrange(len(self.ds_slices)):
+                s_parent_us[self.ds_slices[j]]=s_parent
+        return s_parent_us
+        
+    def subband_group_sum(self,s,group_type,average=True, energy=True):
+        """
+        Computes the sum (or average) (energy) of one of two group types for subband s
+        Group_type can be either 'parent_children' or 'parent_child'
+        """
+        if group_type != 'children':
+            w_parent = self.get_upsampled_parent(s)
+            if energy:
+                w_parent = np.abs(w_parent)**2
+        w_child = self.get_subband(s)   
+        if energy:
+            w_child = np.abs(w_child)**2
+        if group_type == 'parent_children' or group_type == 'children':
+            w_child = np.sum(cat([w_child[self.ds_slices[i]][...,np.newaxis] 
+                                  for i in xrange(len(self.ds_slices))],
+                                  axis=self.int_dimension),axis=self.int_dimension)
+            w_child_us = np.zeros(2*np.asarray(w_child.shape))
+            for j in xrange(len(self.ds_slices)):
+                w_child_us[self.ds_slices[j]] = w_child
+            del w_child    
+            if group_type == 'parent_children':             
+                divisor = 2.0**self.int_dimension + 1
+            else: #children only
+                w_parent = 0
+                divisor = 2.0**self.int_dimension    
+        elif group_type == 'parent_child':
+            w_child_us = w_child
+            divisor = 2.0
+        w_parent += w_child_us
+        if average:
+            w_parent /= divisor
+        return w_parent    
+        
     def set_subband(self,int_subband_index,value):
         if int_subband_index == 0:
             self.ary_lowpass = value
