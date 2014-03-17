@@ -14,10 +14,9 @@ class WS(object):
     """
     WS class for storing and retreiving and performing operations on wavelet subbands. 
     """
-    
     def __init__(self,ary_lowpass,tup_coeffs,tup_scaling=None):
         """
-        Class constructor for DTCWT
+        Class constructor for WS
         """
         self.ary_lowpass = ary_lowpass.copy()
         self.tup_coeffs = deepcopy(tup_coeffs)
@@ -223,7 +222,6 @@ class WS(object):
                 else:    
                     self.ws_vector[int_last_stride+1:int_this_stride:self.int_if] = np.imag(ary_tup_coeffs)
         return self.ws_vector
-
 
     def unflatten(self):
         '''
