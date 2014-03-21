@@ -136,11 +136,7 @@ class WS(object):
     def modulus(self,lowpass=False,coefficients=True):
         """Takes the modulus across all of the subands, and returns a new WS object
         """
-        ws_modulus = WS(self.ary_lowpass,self.tup_coeffs)
-        for s in xrange(ws_modulus.int_subband):
-            if (s==0 and lowpass) or (s>0 and coefficients):
-                ws_modulus.set_subband(s,np.abs(ws_modulus.get_subband(s)))
-        return ws_modulus
+        return WS(np.abs(self.ary_lowpass),np.abs(self.tup_coeffs))
         
     def set_subband(self,int_subband_index,value):
         if int_subband_index == 0:
