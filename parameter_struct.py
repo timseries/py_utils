@@ -49,6 +49,8 @@ class ParameterStruct(object):
             raise Exception("key/val spec not same lengths, or invalid section")
         else:
             for key, value in zip(ls_keys,ls_values):
+                if value.__class__.__name__!='str':
+                    value = str(value)
                 self.config.set(str_section, key, value)
                 
     def get_section_dict(self,str_section):
