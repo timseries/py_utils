@@ -1,8 +1,8 @@
 #!/usr/bin/python -tt
 from py_utils.section import Section
 from libtiff import TIFF as tif
+from PIL import Image
 import numpy as np
-import Image
 
 class Input(Section):
     """
@@ -26,7 +26,32 @@ class Input(Section):
         """
         Read a file, branch on the filetype.
         """
-        str_extension = self.filename.split('.')[-1]
+        if self.filename == 'class_directories':
+            #using the directory structure to build a dictionary of lists, each
+            #dictionary entry corresponding to a different class, with the 
+            #class exemplars elements of the lists
+            dict_in['x'] = {}
+            file_tuple_numbered = enumerate(os.walk(strpath))
+            for index,file_tuple in file_tuple_numbered:
+                if index==0:
+                    entries = file_tuple[1]
+                else:                        
+                    dict_in['x'][entries[index-1]] = file_tuple[2]
+                    dict_in['x'][entries[index-1]].sort()
+                    #read in the files
+                    for entry,index in enumerate(dict_in['x'][entries[index-1]]):
+                        filename=dict_in['x'][entries[index-1]][index]
+                        filepath = self.filedir + '/' + entries[index-1] + '/' + filename
+                        dict_in['x'][entries[index-1]][index] = read_single_file(filepath)
+        else: #single file case    
+            ary_image = self.read_single_file(filepath)
+            if return_val:
+                return ary_image
+            else:
+                dict_in['x'] = ary_image
+
+    def read_single_file(self,filename):
+        str_extension = filename.split('.')[-1]
         if str_extension == 'tif':
             input_file = tif.open(self.filepath, mode='r')
             volume = list(input_file.iter_images())
@@ -37,12 +62,10 @@ class Input(Section):
                 for index,image in enumerate(volume):
                     ary_image[:,:,index] = image
             input_file.close()
-        else:
-            raise Exception('unsupported format: ' + str_extension)
-        if return_val:
             return ary_image
         else:
-            dict_in['x'] = ary_image
+            raise Exception('unsupported format: ' + str_extension)
+            
 
     class Factory:
         def create(self,ps_parameters,str_section):

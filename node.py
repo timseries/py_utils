@@ -23,16 +23,19 @@ class Node(object):
         self.data = None
 
     def __getattr__(self,attr):
-        orig_attr = self.wrapped_class.__getattribute__(attr)
-        if callable(orig_attr):
-            def hooked(*args, **kwargs):
-                result = orig_attr(*args, **kwargs)
-                if result == self.wrapped_class:
-                    return self
-                return result
-            return hooked
-        else:
-            return orig_attr
+        if self.wrapped_class != None:
+            orig_attr = self.wrapped_class.__getattribute__(attr)
+            if callable(orig_attr):
+                def hooked(*args, **kwargs):
+                    result = orig_attr(*args, **kwargs)
+                    if result == self.wrapped_class:
+                        return self
+                    return result
+                return hooked
+            else:
+                return orig_attr
+        else:     
+            return None
 
     def set_data(self,data):
         self.data = data
@@ -41,4 +44,9 @@ class Node(object):
         self.children = children    
 
     def delete_wrapped_instance(self):
-        del self.wrapped_class
+        """Setting the wrapped_class to None, and relying on garbage collection to 
+        free resources. Explicitly deleting the wrapped class can lead to undefined
+        behavior in the __getattr__ method otherwise.
+        """
+        
+        self.wrapped_class = None
