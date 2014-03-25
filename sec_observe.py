@@ -3,6 +3,7 @@ import numpy as np
 from numpy import max as nmax, conj, mean, log10, real
 from numpy.linalg import norm
 from numpy import asarray as ar
+from numpy.random import permutation
 from numpy.fft import fftn, ifftn
 from scipy.interpolate import griddata
 import warnings
@@ -20,21 +21,21 @@ class Observe(Section):
 
     Attributes:
       str_type (str): convolution, convolution_poisson
-      H (OperatorComp): forward OperatorComp of operators.
+      Phi (OperatorComp): forward OperatorComp of modalities.
       W (OperatorComp): forward OperatorComp of transforms.
 
     """       
     def __init__(self,ps_params,str_section):
         super(Observe,self).__init__(ps_params,str_section)
         self.str_type = self.get_val('observationtype',False)
-        self.Phi = OperatorComp(ps_params,
-                              self.get_val('modalities',False))
-        if len(self.Phi.ls_ops)==1: #avoid slow 'eval' in OperatorComp
-            self.Phi = self.Phi.ls_ops[0] 
-        self.W = OperatorComp(ps_params,
-                              self.get_val('transforms',False))
-        if len(self.W.ls_ops)==1: #avoid slow 'eval' in OperatorComp
-            self.W = self.W.ls_ops[0] 
+        if self.get_val('modalities',False)!='':
+            self.Phi = OperatorComp(ps_params,self.get_val('modalities',False))
+            if len(self.Phi.ls_ops)==1: #avoid slow 'eval' in OperatorComp
+                self.Phi = self.Phi.ls_ops[0] 
+        if self.get_val('transforms',False)!='':
+            self.W = OperatorComp(ps_params,self.get_val('transforms',False))
+            if len(self.W.ls_ops)==1: #avoid slow 'eval' in OperatorComp
+                self.W = self.W.ls_ops[0] 
             
     def observe(self,dict_in):
         """
@@ -163,8 +164,44 @@ class Observe(Section):
                 #dict_in['x_0'] = np.real(ifftn(fftn(~H * dict_in['y']) / \
                 #(conj(H.get_spectrum()) * H.get_spectrum() + wrf * noise_pars['variance'])))
             else:
-                raise Exception('spatial convolution not supported') 
-            
+                raise Exception('domain not supported: ' + str_domain)
+
+        elif self.str_type=='classification':
+            #partition the classification dataset into an 'observed' training set
+            #and an unobserved evaluation/test set, and generate features
+            S = self.W #our scattering transform
+            dict_in['x_train'] = {}
+            dict_in['x_test'] = {}
+            dict_in['y_label'] = {}
+            dict_in['y_feature'] = {}
+            dict_in['n_training_samples'] = 0
+            dict_in['n_testing_samples'] = 0
+            if self.get_val('shuffle',True):
+                shuffle=1
+                shuffleseed=self.get_val('shuffleseed',True)
+            training_proportion = self.get_val('trainingproportion',True)    
+            classes = dict_in['x'].keys()
+            #partition and generate numeric class labels 
+            for _class_index,_class in enumerate(classes):
+                class_size = len(dict_in['x'][_class])
+                training_size = np.floor(training_proportion*class_size)
+                dict_in['n_training_samples'] += training_size
+                dict_in['n_testing_samples'] += class_size-training_size
+                if shuffle:
+                    np.random.seed(shuffleseed + _class_index)
+                    indices = np.random.permutation(class_size)
+                else:
+                    indices = np.array(range(class_size))
+                dict_in['x_train'][_class]=indices[:training_size]
+                dict_in['x_test'][_class]=indices[training_size:]
+                dict_in['y_label'][_class]=_class_index
+            #generate feature vector 'observations'    
+            for _class_index,_class in enumerate(classes):
+                print 'generating scattering features for class ' + _class
+                n_training_samples = len(dict_in['x'][_class])
+                dict_in['y_feature'][_class]=[(S*dict_in['x'][_class][sample]).reduce() for 
+                                              sample in xrange(n_training_samples)]
+            dict_in['feature_vector_size'] = dict_in['y_feature'][_class].size
         elif self.str_type == 'compressedsensing':
             raise Exception('cs observation not supported yet')    
         else:
