@@ -201,7 +201,7 @@ class Observe(Section):
                 n_training_samples = len(dict_in['x'][_class])
                 dict_in['y_feature'][_class]=[(S*dict_in['x'][_class][sample]).reduce() for 
                                               sample in xrange(n_training_samples)]
-            dict_in['feature_vector_size'] = dict_in['y_feature'][_class].size
+            dict_in['feature_vector_size'] = dict_in['y_feature'][_class][-1].size
         elif self.str_type == 'compressedsensing':
             raise Exception('cs observation not supported yet')    
         else:
