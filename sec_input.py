@@ -1,8 +1,13 @@
 #!/usr/bin/python -tt
-from py_utils.section import Section
 from libtiff import TIFF as tif
 from PIL import Image
+from scipy import misc
 import numpy as np
+import os
+
+from py_utils.section import Section
+
+import pdb
 
 class Input(Section):
     """
@@ -26,25 +31,25 @@ class Input(Section):
         """
         Read a file, branch on the filetype.
         """
-        if self.filename == 'class_directories':
+        if self.filename=='class_directories':
             #using the directory structure to build a dictionary of lists, each
             #dictionary entry corresponding to a different class, with the 
             #class exemplars elements of the lists
             dict_in['x'] = {}
-            file_tuple_numbered = enumerate(os.walk(strpath))
-            for index,file_tuple in file_tuple_numbered:
-                if index==0:
+            file_tuple_numbered = enumerate(os.walk(self.filedir))
+            for cls_index,file_tuple in file_tuple_numbered:
+                if cls_index==0:
                     entries = file_tuple[1]
-                else:                        
-                    dict_in['x'][entries[index-1]] = file_tuple[2]
-                    dict_in['x'][entries[index-1]].sort()
+                else:                    
+                    dict_in['x'][entries[cls_index-1]] = file_tuple[2]
+                    dict_in['x'][entries[cls_index-1]].sort()
                     #read in the files
-                    for entry,index in enumerate(dict_in['x'][entries[index-1]]):
-                        filename=dict_in['x'][entries[index-1]][index]
-                        filepath = self.filedir + '/' + entries[index-1] + '/' + filename
-                        dict_in['x'][entries[index-1]][index] = read_single_file(filepath)
+                    for file_index,entry in enumerate(dict_in['x'][entries[cls_index-1]]):
+                        filename=dict_in['x'][entries[cls_index-1]][file_index]
+                        filepath = self.filedir + '/' + entries[cls_index-1] + '/' + filename
+                        dict_in['x'][entries[cls_index-1]][file_index] = self.read_single_file(filepath)
         else: #single file case    
-            ary_image = self.read_single_file(filepath)
+            ary_image = self.read_single_file(self.filepath)
             if return_val:
                 return ary_image
             else:
@@ -62,10 +67,11 @@ class Input(Section):
                 for index,image in enumerate(volume):
                     ary_image[:,:,index] = image
             input_file.close()
-            return ary_image
+        elif str_extension == 'jpg':
+            ary_image = misc.imread(filename)
         else:
             raise Exception('unsupported format: ' + str_extension)
-            
+        return ary_image
 
     class Factory:
         def create(self,ps_parameters,str_section):
