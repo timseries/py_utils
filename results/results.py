@@ -16,8 +16,6 @@ import time
 import datetime
 import csv 
 
-import pdb
-
 class Results(Section):
     """
     Class for defining a collection of metrics to update. Contains methods to 
@@ -48,7 +46,7 @@ class Results(Section):
         self.int_overlap = max(5,self.get_val('overlap',True))
         self.save_interval = self.get_val('saveinterval',True)
         self.output_directory = self.get_val('outputdirectory',False)
-        self.output_filename = self.get_val('outputfilename',False)
+        self.output_fileprefix = self.get_val('outputfilename',False)
         self.overwrite_results = self.get_val('overwriteresults',True)
         
         #get screen info
@@ -56,6 +54,16 @@ class Results(Section):
         self.screen_size =  aa([int(screen.split()[7]), \
                                 int(screen.split()[9][:-1])], dtype = np.int)
         self.arrange_metric_windows() #figure out the coordinates
+        #create a folder in the output directory with the current minute's time stamp
+        if self.output_directory=='':
+            print ('Not writing results to file no output dir specified')
+            return None
+        st = '/'
+        if not self.overwrite_results:
+            st = '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M:%S')
+        self.strDirectory = self.output_directory + st
+        if not os.path.exists(self.strDirectory):
+            os.mkdir(self.strDirectory)
         
     def update(self,dict_in):
         """Update the metrics in this results collection.
@@ -67,20 +75,11 @@ class Results(Section):
         """Save the metrics in this results collection to file. 
         This aggregates all fo the 'csv' output metrics together into one csv file.
         The other metrics are dealt with separately.
+        Does not overwrites results by default, and instead creates a new time-stamped subdirectory of self.output_directory
         """
-        #create a folder in the output directory with the current minute's time stamp
-        if self.output_directory=='':
-            print ('Not writing results to file no output dir specified')
-            return None
-        st = '/'
-        if not self.overwrite_results:
-            st = '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M:%S')
-        strDirectory = self.output_directory + st
-        if not os.path.exists(strDirectory):
-            os.mkdir(strDirectory)
         #save the parameters to this folder as ini, and write as csv
-        self.ps_parameters.write(strDirectory + self.output_filename + '.ini')
-        self.ps_parameters.write_csv(strDirectory + self.output_filename + '.' + DEFAULT_CSV_EXT)
+        self.ps_parameters.write(self.strDirectory + self.output_fileprefix + '_config.ini')
+        self.ps_parameters.write_csv(self.strDirectory + self.output_fileprefix + '_config.' + DEFAULT_CSV_EXT)
         #collect all of the metrics into a table (list of lists, one list per row)
         #these metrics can be written to a csv file
         int_rows = len(self.ls_metrics[0].data)
@@ -90,14 +89,20 @@ class Results(Section):
         #start a new csv file, and save the csv metrics there
         headers = [metric.key for metric in self.ls_metrics_csv] 
         headers.insert(0,'n')
-        with open(strDirectory + self.output_filename + '.' + DEFAULT_CSV_EXT, 'w') as csvfile:
+        with open(self.strDirectory + self.output_fileprefix + '_metrics.' + DEFAULT_CSV_EXT, 'w') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(headers)
             writer.writerows(table)
         #save the other metrics to file by invoking their respective save methods
         for metric in self.ls_metrics_no_csv:
-            metric.save(strDirectory + self.output_filename)
-            
+            self.save_metric(metric)
+
+    def save_metric(self,metric):
+        metric.save(self.strDirectory + self.output_fileprefix + '_' + metric.key)
+
+    def get_output_path(self):
+        return self.strDirectory
+        
     def arrange_metric_windows(self):
         """
         Determine the grid placement of metric figure windows and assign figure numbers. 

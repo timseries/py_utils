@@ -30,7 +30,6 @@ class OutputImage(Metric):
         
     def update(self,dict_in):
         """Takes a 2D or 3D image or volume . If a volume, display the :attr:`self.slice` if specified, otherwise display volume using Myavi. Aggregate images/slices into a volume to view the reconstruction later, or save volumes
-
         :param dict_in: Input dictionary which contains the referenece to the image/volume data to display and record. 
         """
         if self.data == []:

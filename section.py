@@ -1,6 +1,9 @@
 #!/usr/bin/python -tt
-from py_utils import parameter_struct
 from numpy import array
+from os.path import expanduser
+
+from py_utils import parameter_struct
+
 class Section(object):
     """
     Base class for defining other classes which inherit properties from a config.
@@ -26,6 +29,9 @@ class Section(object):
     def get_subsection_strings(self,str_key):
         ls_subsections = self.dict_section[str_key].split()
 
+    def get_params(self):
+        return self.ps_parameters
+
     def get_subsections(self,str_key):
         """
         Returns section objects specified from a sections str_key field
@@ -43,6 +49,7 @@ class Section(object):
         :returns val: Either a string, a numeric value (float or int, depending), \
         or a list of ints.
         """       
+        #set the default value pass-throughs
         if lgc_val_numeric:
             val = default_value
         else:
@@ -75,6 +82,8 @@ class Section(object):
             else:
                 if ',' in val:
                     val=val.split(',')
+                if '~' in val:
+                    val=expanduser(val)    
         return val
 
     class Factory:

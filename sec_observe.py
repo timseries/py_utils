@@ -169,39 +169,31 @@ class Observe(Section):
         elif self.str_type=='classification':
             #partition the classification dataset into an 'observed' training set
             #and an unobserved evaluation/test set, and generate features
-            S = self.W #our scattering transform
             dict_in['x_train'] = {}
             dict_in['x_test'] = {}
             dict_in['y_label'] = {}
-            dict_in['y_feature'] = {}
+            dict_in['x_feature'] = {}
             dict_in['n_training_samples'] = 0
             dict_in['n_testing_samples'] = 0
-            if self.get_val('shuffle',True):
-                shuffle=1
+            shuffle=self.get_val('shuffle',True)
+            if shuffle:
                 shuffleseed=self.get_val('shuffleseed',True)
             training_proportion = self.get_val('trainingproportion',True)    
             classes = dict_in['x'].keys()
             #partition and generate numeric class labels 
             for _class_index,_class in enumerate(classes):
                 class_size = len(dict_in['x'][_class])
-                training_size = np.floor(training_proportion*class_size)
+                training_size = int(training_proportion*class_size)
                 dict_in['n_training_samples'] += training_size
                 dict_in['n_testing_samples'] += class_size-training_size
                 if shuffle:
-                    np.random.seed(shuffleseed + _class_index)
+                    np.random.seed(shuffleseed)
                     indices = np.random.permutation(class_size)
                 else:
                     indices = np.array(range(class_size))
                 dict_in['x_train'][_class]=indices[:training_size]
                 dict_in['x_test'][_class]=indices[training_size:]
                 dict_in['y_label'][_class]=_class_index
-            #generate feature vector 'observations'    
-            for _class_index,_class in enumerate(classes):
-                print 'generating scattering features for class ' + _class
-                n_training_samples = len(dict_in['x'][_class])
-                dict_in['y_feature'][_class]=[(S*dict_in['x'][_class][sample]).reduce() for 
-                                              sample in xrange(n_training_samples)]
-            dict_in['feature_vector_size'] = dict_in['y_feature'][_class][-1].size
         elif self.str_type == 'compressedsensing':
             raise Exception('cs observation not supported yet')    
         else:

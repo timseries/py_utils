@@ -8,7 +8,7 @@ class Scat(object):
     Scattering class for storing and retreiving and performing operations on scattering 
     coefficients.
     """
-    def __init__(self,root_node,int_orientations,int_levels,depth):
+    def __init__(self,root_node=None,int_orientations=None,int_levels=None,depth=None):
         """
         Class constructor for Scattering object,
         coeffs_index is a dictionary of path lists used to look-up
@@ -18,7 +18,6 @@ class Scat(object):
         self.int_orientations = int_orientations
         self.max_transform_levels = int_levels
         self.depth = depth
-        self.input_dim = root_node.data.ndim #dimension of the input signal
         self.depth_first_nodes = None
         self.breadth_first_nodes = None
         
@@ -63,12 +62,17 @@ class Scat(object):
         nodes_list = self.get_nodes(traversal_method)
         dims = nodes_list[0].get_data().ndim
         return np.concatenate(
-            [node.get_data()[...,np.newaxis] for node in nodes_list],axis=self.input_dim)
-
-    def reduce(self,traversal_method='breadth'):
+            [node.get_data()[...,np.newaxis] for node in nodes_list],axis=dims)
+    
+    @staticmethod
+    def reduce(flattened_scat,method='sum'):
         """Sums each of arrays returned by self.flatten to produce a single vector, 
         with each element corresponding to a path taken to a set of scattering
         coefficients
         """
-        sum_dims = tuple([j for j in xrange(self.input_dim)])
-        return np.sum(self.flatten(traversal_method),axis=sum_dims)
+        sum_dims = tuple([j for j in xrange(flattened_scat.ndim-1)])
+        if method=='sum':
+            return np.sum(flattened_scat,axis=sum_dims,dtype='float32')
+        else:
+            ValueError('no such reduce method in Scat')
+ 

@@ -3,7 +3,7 @@ from numpy import arange, array, maximum, zeros
 from py_utils.section import Section
 import matplotlib
 import matplotlib.pyplot as plt
-from py_utils.results.defaults import DEFAULT_CSV_EXT
+from py_utils.results.defaults import DEFAULT_CSV_EXT,DEFAULT_KEY
 
 class Metric(Section):
     """
@@ -21,7 +21,7 @@ class Metric(Section):
         self.figure_number = None
         self.data = []
         self.ylabel = self.get_val('ylabel',False)
-        self.key = self.get_val('key',False)
+        self.key = self.get_val('key',False,DEFAULT_KEY)
         self.title = self.get_val('title',False)
         self.print_values = self.get_val('print',True)
         self.output_format = self.get_val('outputformat',False,'csv')

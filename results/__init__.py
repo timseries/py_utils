@@ -6,5 +6,6 @@ from met_f_correl import FourierCorrelation
 from met_psnr import PSNR
 from met_rer import RER
 from met_output_image import OutputImage
+from met_output_object import OutputObject
 from met_classification import ClassificationMetric
 from fmetrics import FMetrics

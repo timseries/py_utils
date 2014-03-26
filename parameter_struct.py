@@ -2,7 +2,7 @@
 import ConfigParser
 import csv
 import os
-from os.path import exists, dirname
+from os.path import exists, dirname, expanduser
 
 class ParameterStruct(object):
     """
@@ -14,6 +14,7 @@ class ParameterStruct(object):
         Class constructor for Section.
         """       
         self.config = ConfigParser.ConfigParser(allow_no_value=True)
+        str_file_path = expanduser(str_file_path)
         self.config.read(str_file_path)
         if self.config.sections() == []:
             raise Exception("file empty or non-existent")    
