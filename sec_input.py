@@ -78,7 +78,7 @@ class Input(Section):
             file_data = pickle.load(filehandler)
             filehandler.close()
         elif str_extension == 'json':
-            ValueError('json not coded yet')
+            raise ValueError('json not coded yet')
         else:
             raise Exception('unsupported format: ' + str_extension)
         return file_data

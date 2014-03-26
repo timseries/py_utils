@@ -26,14 +26,14 @@ class Scat(object):
         to this path
         """
         if subband_path[0]!=0:
-            ValueError('every subband path should begin with 0 ' + str(subband_path))
+            raise ValueError('every subband path should begin with 0 ' + str(subband_path))
         node = self.root_node
         for level_index,path_index in enumerate(subband_path[1:]):
             if node.children!=[]:
                 node = node.children[path_index]
             else:
-                Warning('subband path exceeds depth of tree '  + 
-                        str(subband_path) + '...stopping at ' + str(level_index))
+            raise Warning('subband path exceeds depth of tree '  + 
+                          str(subband_path) + '...stopping at ' + str(level_index))
         return node         
 
     def get_nodes(self,traversal_method='breadth'):
@@ -53,7 +53,7 @@ class Scat(object):
                     parent_nodes_next = []    
             return self.breadth_first_nodes
         else:
-            ValueError('unsupported traversal ' + traversal_method)
+            raise ValueError('unsupported traversal ' + traversal_method)
             
     def flatten(self,traversal_method='breadth'):
         """returns a d+1-D numpy array, with each of the nodes concatenated along
@@ -74,5 +74,5 @@ class Scat(object):
         if method=='sum':
             return np.sum(flattened_scat,axis=sum_dims,dtype='float32')
         else:
-            ValueError('no such reduce method in Scat')
+            raise ValueError('no such reduce method in Scat')
  

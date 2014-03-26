@@ -74,7 +74,7 @@ def spectral_radius(op_transform, op_modality, tup_size, method='spectrum'):
             print ary_eigs
         ary_alpha = np.minimum(ary_eigs,1.0)
     else:
-        ValueError('method ' + method + ' unsupported')
+        raise ValueError('method ' + method + ' unsupported')
                 
     print ary_alpha
     return ary_alpha
@@ -280,7 +280,7 @@ def upsample(ary_input,factor=2,method='shiftadd'):
     ary_upsampled = np.zeros(np.array(ary_input.shape)*factor)
     if method=='shiftadd':
         if ary_upsampled.ndim!=2:
-            ValueError('dimensions other than 2 not supported')
+            raise ValueError('dimensions other than 2 not supported')
         y1=np.zeros((ary_upsampled.shape[0],ary_input.shape[1]))
         y1[slice(0,-1,2),...] = (0.75*ary_input 
                                     + 0.25*np.concatenate(
@@ -300,7 +300,7 @@ def upsample(ary_input,factor=2,method='shiftadd'):
                                                    y1[...,slice(-1,None)]],axis=1))
         return ary_upsampled
     else:
-        ValueError('unsupported upsample method ' + method)
+        raise ValueError('unsupported upsample method ' + method)
     
 def mad(data, axis=None):
     return median(absolute(data - median(data, axis)), axis)

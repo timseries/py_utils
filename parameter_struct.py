@@ -31,7 +31,7 @@ class ParameterStruct(object):
 
     def write_csv(self,str_file_path=None):
         if str_file_path == None or not exists(dirname(str_file_path)):
-            ValueError('need a valid csv filepath')
+            raise ValueError('need a valid csv filepath')
             #build the headers
         else:    
             headers = [[self.section_names[i] + ":" + \

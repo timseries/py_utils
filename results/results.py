@@ -30,7 +30,7 @@ class Results(Section):
         if self.ls_metric_names.__class__.__name__ == 'str':
             self.ls_metric_names = [self.ls_metric_names]
         else:
-            ValueError('need a string of metrics to create this')    
+            raise ValueError('need a string of metrics to create this')    
         self.ls_metrics = [sf.create_section(ps_parameters, self.ls_metric_names[i]) \
                            for i in arange(len(self.ls_metric_names))]
         self.ls_metrics_csv = [self.ls_metrics[i] 

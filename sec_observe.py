@@ -65,7 +65,7 @@ class Observe(Section):
             dict_in['noisevariance'] = noise_pars['variance']
             dict_in['n'] = noise_gen(noise_pars)
         else:    
-            ValueError('unsupported observation model')     
+            raise ValueError('unsupported observation model')     
         #compute the forward model and initial estimate
         if (self.str_type == 'convolution'):
                 H = self.Phi

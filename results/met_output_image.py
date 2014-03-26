@@ -73,7 +73,7 @@ class OutputImage(Metric):
                 output = tif.open(strPath, mode='w')
                 output.write_image(write_data)
         else:
-            ValueError('unsupported extension')
+            raise ValueError('unsupported extension')
             
     class Factory:
         def create(self,ps_parameters,str_section):

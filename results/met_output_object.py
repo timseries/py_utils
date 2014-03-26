@@ -31,16 +31,16 @@ class OutputObject(Metric):
 
     def save(self,strPath='~/outputimage'):
         if self.dict_in == None:
-            ValueError('uninitialized dict in outputobject')
+            raise ValueError('uninitialized dict in outputobject')
         data = self.dict_in[self.key]    
         strPath = strPath + '.' + self.output_extension
         filehandler = open(strPath, 'wb')
         if self.output_extension=='pkl':
             pickle.dump(data, filehandler) 
         elif self.output_extension=='json':
-            ValueError('json not available yet')            
+            raise ValueError('json not available yet')            
         else:
-            ValueError('unsupported extension')
+            raise ValueError('unsupported extension')
         filehandler.close()
     class Factory:
         def create(self,ps_parameters,str_section):
