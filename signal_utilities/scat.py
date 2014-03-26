@@ -32,7 +32,7 @@ class Scat(object):
             if node.children!=[]:
                 node = node.children[path_index]
             else:
-            raise Warning('subband path exceeds depth of tree '  + 
+                raise Warning('subband path exceeds depth of tree '  + 
                           str(subband_path) + '...stopping at ' + str(level_index))
         return node         
 

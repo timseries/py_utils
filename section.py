@@ -65,14 +65,14 @@ class Section(object):
                     try: 
                         val=array([int(val.split()[i]) 
                                    for i in range(len(val.split()))])
-                    raise ValueError:
+                    except ValueError:
                         val=array([float(val.split()[i]) 
                                    for i in range(len(val.split()))])
                 else:
                     val1 = self.ps_parameters.config.getfloat(self.str_section,str_key)
                     try:
                         val2 = self.ps_parameters.config.getint(self.str_section,str_key)
-                    raise ValueError:
+                    except ValueError:
                         val2 = val1
                     
                     if val1 == val2:
