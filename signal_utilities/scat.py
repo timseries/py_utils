@@ -64,6 +64,12 @@ class Scat(object):
         return np.concatenate(
             [node.get_data()[...,np.newaxis] for node in nodes_list],axis=dims)
     
+    def gen_image(self,traversla_method='breadth'):
+        """generates an image (numpy array) by traversing the scat tree
+        """
+        nodes_list = self.get_nodes(traversal_method)
+        return np.zeros(10) #todo('FIX')
+
     @staticmethod
     def reduce(flattened_scat,method='sum'):
         """Sums each of arrays returned by self.flatten to produce a single vector, 

@@ -1,5 +1,5 @@
 #!/usr/bin/python -tt
-import pickle
+import cPickle
 
 from py_utils.results.metric import Metric
 from py_utils.results.defaults import DEFAULT_OBJECT_EXT
@@ -36,7 +36,7 @@ class OutputObject(Metric):
         strPath = strPath + '.' + self.output_extension
         filehandler = open(strPath, 'wb')
         if self.output_extension=='pkl':
-            pickle.dump(data, filehandler) 
+            cPickle.dump(data, filehandler) 
         elif self.output_extension=='json':
             raise ValueError('json not available yet')            
         else:

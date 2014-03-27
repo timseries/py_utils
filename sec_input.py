@@ -5,11 +5,9 @@ from scipy import misc
 import numpy as np
 from collections import OrderedDict
 import os
-import pickle
+import cPickle
 
 from py_utils.section import Section
-
-import pdb
 
 class Input(Section):
     """
@@ -75,7 +73,7 @@ class Input(Section):
             file_data = misc.imread(filepath)
         elif str_extension == 'pkl':
             filehandler = open(filepath, 'r') 
-            file_data = pickle.load(filehandler)
+            file_data = cPickle.load(filehandler)
             filehandler.close()
         elif str_extension == 'json':
             raise ValueError('json not coded yet')

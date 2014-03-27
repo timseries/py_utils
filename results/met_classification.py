@@ -1,9 +1,8 @@
 #!/usr/bin/python -tt
+import numpy as np
 import sklearn.metrics as sm
 
 from py_utils.results.metric import Metric
-
-import pdb
 
 class ClassificationMetric(Metric):
     """
@@ -38,9 +37,9 @@ class ClassificationMetric(Metric):
             raise ValueError('unsupported classification metric ' + self.metric_type)    
 
     def update(self,dict_in):
-        pdb.set_trace()
+        #replicate this metric for the number of testing instances
         self.data.append(self.met_fun(dict_in['y_truth'],dict_in['y_pred']))
-        super(ClassificationMetric,self).update(value)
+        super(ClassificationMetric,self).update()
         
     class Factory:
         def create(self,ps_params,str_section):

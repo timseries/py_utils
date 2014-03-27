@@ -74,7 +74,6 @@ class Section(object):
                         val2 = self.ps_parameters.config.getint(self.str_section,str_key)
                     except ValueError:
                         val2 = val1
-                    
                     if val1 == val2:
                         val = val2
                     else:

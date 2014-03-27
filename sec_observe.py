@@ -49,9 +49,7 @@ class Observe(Section):
         """
         warnings.simplefilter("ignore",np.ComplexWarning)
         #build the observation model parameters
-        if (self.str_type == 'convolution' or 
-          self.str_type == 'convolution_poisson' or
-          self.str_type == 'convolution_downsample'):
+        if (self.str_type[:11] == 'convolution'):
             wrf = nmax(self.get_val('wienerfactor',True),0.001)
             str_domain = self.get_val('domain',False)
             noise_pars = {} #build a dict to generate the noise
@@ -64,6 +62,36 @@ class Observe(Section):
             noise_pars['size'] = dict_in['x'].shape
             dict_in['noisevariance'] = noise_pars['variance']
             dict_in['n'] = noise_gen(noise_pars)
+        elif self.str_type=='classification':
+            #partition the classification dataset into an 'observed' training set
+            #and an unobserved evaluation/test set, and generate features
+            dict_in['x_train'] = {}
+            dict_in['x_test'] = {}
+            dict_in['y_label'] = {}
+            dict_in['x_feature'] = {}
+            dict_in['n_training_samples'] = 0
+            dict_in['n_testing_samples'] = 0
+            shuffle=self.get_val('shuffle',True)
+            if shuffle:
+                shuffleseed=self.get_val('shuffleseed',True)
+            training_proportion = self.get_val('trainingproportion',True)    
+            classes = dict_in['x'].keys()
+            #partition and generate numeric class labels 
+            for _class_index,_class in enumerate(classes):
+                class_size = len(dict_in['x'][_class])
+                training_size = int(training_proportion*class_size)
+                dict_in['n_training_samples'] += training_size
+                dict_in['n_testing_samples'] += class_size-training_size
+                if shuffle:
+                    np.random.seed(shuffleseed)
+                    indices = np.random.permutation(class_size)
+                else:
+                    indices = np.array(range(class_size),dtype='uint16')
+                dict_in['x_train'][_class]=indices[:training_size]
+                dict_in['x_test'][_class]=indices[training_size:]
+                dict_in['y_label'][_class]=_class_index
+        elif self.str_type == 'compressedsensing':
+            raise Exception('cs observation not supported yet')    
         else:    
             raise ValueError('unsupported observation model')     
         #compute the forward model and initial estimate
@@ -165,39 +193,6 @@ class Observe(Section):
                 #(conj(H.get_spectrum()) * H.get_spectrum() + wrf * noise_pars['variance'])))
             else:
                 raise Exception('domain not supported: ' + str_domain)
-
-        elif self.str_type=='classification':
-            #partition the classification dataset into an 'observed' training set
-            #and an unobserved evaluation/test set, and generate features
-            dict_in['x_train'] = {}
-            dict_in['x_test'] = {}
-            dict_in['y_label'] = {}
-            dict_in['x_feature'] = {}
-            dict_in['n_training_samples'] = 0
-            dict_in['n_testing_samples'] = 0
-            shuffle=self.get_val('shuffle',True)
-            if shuffle:
-                shuffleseed=self.get_val('shuffleseed',True)
-            training_proportion = self.get_val('trainingproportion',True)    
-            classes = dict_in['x'].keys()
-            #partition and generate numeric class labels 
-            for _class_index,_class in enumerate(classes):
-                class_size = len(dict_in['x'][_class])
-                training_size = int(training_proportion*class_size)
-                dict_in['n_training_samples'] += training_size
-                dict_in['n_testing_samples'] += class_size-training_size
-                if shuffle:
-                    np.random.seed(shuffleseed)
-                    indices = np.random.permutation(class_size)
-                else:
-                    indices = np.array(range(class_size))
-                dict_in['x_train'][_class]=indices[:training_size]
-                dict_in['x_test'][_class]=indices[training_size:]
-                dict_in['y_label'][_class]=_class_index
-        elif self.str_type == 'compressedsensing':
-            raise Exception('cs observation not supported yet')    
-        else:
-            raise Exception('no observation type: ' + self.str_type)
 
     def compute_bsnr(self,dict_in,noise_pars):
         Hx = dict_in['Hx'].flatten()

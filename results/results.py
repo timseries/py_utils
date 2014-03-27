@@ -29,8 +29,6 @@ class Results(Section):
         self.ls_metric_names = self.get_val('metrics',False)
         if self.ls_metric_names.__class__.__name__ == 'str':
             self.ls_metric_names = [self.ls_metric_names]
-        else:
-            raise ValueError('need a string of metrics to create this')    
         self.ls_metrics = [sf.create_section(ps_parameters, self.ls_metric_names[i]) \
                            for i in arange(len(self.ls_metric_names))]
         self.ls_metrics_csv = [self.ls_metrics[i] 
@@ -75,15 +73,15 @@ class Results(Section):
         """Save the metrics in this results collection to file. 
         This aggregates all fo the 'csv' output metrics together into one csv file.
         The other metrics are dealt with separately.
-        Does not overwrites results by default, and instead creates a new time-stamped subdirectory of self.output_directory
+        Does not overwrite results by default, and instead creates a new time-stamped subdirectory of self.output_directory
         """
         #save the parameters to this folder as ini, and write as csv
         self.ps_parameters.write(self.strDirectory + self.output_fileprefix + '_config.ini')
         self.ps_parameters.write_csv(self.strDirectory + self.output_fileprefix + '_config.' + DEFAULT_CSV_EXT)
         #collect all of the metrics into a table (list of lists, one list per row)
         #these metrics can be written to a csv file
-        int_rows = len(self.ls_metrics[0].data)
-        table = [[j] + [metric.data[j] for metric in self.ls_metrics_csv] 
+        int_rows = max([len(metric.data) for metric in self.ls_metrics_csv])
+        table = [[j] + [metric.data[j] if j < len(metric.data) else 0 for metric in self.ls_metrics_csv] 
                   for j in xrange(int_rows)]
         # pdb.set_trace()
         #start a new csv file, and save the csv metrics there

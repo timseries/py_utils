@@ -26,6 +26,7 @@ class Metric(Section):
         self.print_values = self.get_val('print',True)
         self.output_format = self.get_val('outputformat',False,'csv')
         self.crop_plot = maximum(zeros(2),self.get_val('cropplot',True)) #2 element vector, beginning and end to crop for plotting
+        self.crop_plot.dtype='uint8'
         self.has_csv = self.get_val('hascsv',True,True)
 
     def plot(self):
