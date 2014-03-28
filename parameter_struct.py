@@ -17,7 +17,7 @@ class ParameterStruct(object):
         str_file_path = expanduser(str_file_path)
         self.config.read(str_file_path)
         if self.config.sections() == []:
-            raise Exception("file empty or non-existent")    
+            raise Exception("file " + str_file_path + " empty or non-existent")    
         self.str_file_path = str_file_path
         self.str_file_dir = os.path.dirname(os.path.realpath(str_file_path))
         self.section_names = self.config._sections.keys()

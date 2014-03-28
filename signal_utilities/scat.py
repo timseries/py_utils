@@ -52,6 +52,7 @@ class Scat(object):
                     parent_nodes = parent_nodes_next
                     parent_nodes_next = []    
             return self.breadth_first_nodes
+
         else:
             raise ValueError('unsupported traversal ' + traversal_method)
             
@@ -64,10 +65,25 @@ class Scat(object):
         return np.concatenate(
             [node.get_data()[...,np.newaxis] for node in nodes_list],axis=dims)
     
-    def gen_image(self,traversla_method='breadth'):
+    def gen_image(self,traversal_method='breadth'):
         """generates an image (numpy array) by traversing the scat tree
         """
+        #flatten out the tree
         nodes_list = self.get_nodes(traversal_method)
+        #get all of the subband path lists, put in a list
+        subband_paths=[node.path for node in nodes_list]
+        #build a list of subband path lists, each element corresponding to a scattering depth
+        min_path_len=min([len(subband_paths) for subband_path in subband_pathss])
+        max_path_len=max([len(subband_paths) for subband_path in subband_pathss])
+        #filter by subband path length
+        subband_paths_by_level=[sorted([subband_path for subband_path in subband_paths if len(subband_path) == pathlen])
+                                for pathlen in xrange(min_path_len,max_path_len+1)]
+        #initialize montage
+        thumbnail_width = nodes_list[0].data.shape[0]
+        thumbnail_height = nodes_list[0].data.shape[1]
+        montage_cols = 0
+        montage_width = 0
+        #now loop and build the montage
         return np.zeros(10) #todo('FIX')
 
     @staticmethod
@@ -77,8 +93,9 @@ class Scat(object):
         coefficients
         """
         sum_dims = tuple([j for j in xrange(flattened_scat.ndim-1)])
-        if method=='sum':
+        if method=='sum' or method=='':
             return np.sum(flattened_scat,axis=sum_dims,dtype='float32')
+        if method=='average':
+            return np.average(flattened_scat,axis=sum_dims,dtype='float32')
         else:
             raise ValueError('no such reduce method in Scat')
- 

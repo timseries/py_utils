@@ -21,6 +21,8 @@ class Node(object):
         self.wrapped_class = wrapped_class
         self.children = []
         self.data = None
+        self.path = None
+        self.scale = None
 
     def __getattr__(self,attr):
         if self.wrapped_class != None:
@@ -40,6 +42,12 @@ class Node(object):
     def set_data(self,data):
         self.data = data
 
+    def set_scale(self,scale):
+        self.scale = scale
+        
+    def set_path(self,path):
+        self.path = path
+        
     def get_data(self):
         return self.data
     

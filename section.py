@@ -1,5 +1,6 @@
 #!/usr/bin/python -tt
 from numpy import array
+import inspect
 from os.path import expanduser
 
 from py_utils import parameter_struct
@@ -59,8 +60,9 @@ class Section(object):
                 val = default_value
         if self.dict_section.has_key(str_key):
             val = self.ps_parameters.config.get(self.str_section,str_key).strip()
+            lgc_check_numeric = self.is_number(val)
             if lgc_val_numeric:
-                #test for numeric arrays separated by a space
+                #test for numeric arrays separated by a space first
                 if ' ' in val: 
                     try: 
                         val=array([int(val.split()[i]) 
@@ -69,21 +71,74 @@ class Section(object):
                         val=array([float(val.split()[i]) 
                                    for i in range(len(val.split()))])
                 else:
-                    val1 = self.ps_parameters.config.getfloat(self.str_section,str_key)
-                    try:
-                        val2 = self.ps_parameters.config.getint(self.str_section,str_key)
-                    except ValueError:
-                        val2 = val1
-                    if val1 == val2:
-                        val = val2
-                    else:
-                        val = val1    
+                    #try to parse a scalar float or int
+                    if lgc_check_numeric:
+                        #get the appropriate numeric type, float or int
+                        val1 = self.ps_parameters.config.getfloat(self.str_section,str_key)
+                        try:
+                            val2 = self.ps_parameters.config.getint(self.str_section,str_key)
+                        except ValueError:
+                            val2 = val1
+                        if val1 == val2:
+                            val = val2
+                        else:
+                            val = val1    
+                    else:#must have mis-specified lgc_val_numeric, return a string
+                        val = val
             else:
-                if ',' in val:
+                #do some parsing for special strings, such as  
+                if ',' in val: #comma-delimited lists or
                     val=val.split(',')
-                if '~' in val:
+                if '~' in val: #paths or
                     val=expanduser(val)    
         return val
+
+    def get_keyword_arguments(self,kwprefix):
+        """get all keyword arguments start with kwprefix, build the corresponding
+        dictionary and return
+        
+        """
+        kwargs = {}
+        len_kwprefix = len(kwprefix)
+        orig_keys = self.dict_section.keys()
+        keys = [key[len_kwprefix:] for key in orig_keys if kwprefix in key]
+        orig_keys = [key for key in orig_keys if kwprefix in key]
+        for orig_key,key in zip(orig_keys,keys): #assume vals are numeric, and let the get_val method handle exceptions
+            kwargs[key]=self.get_val(orig_key,True)
+        return kwargs    
+    
+    @staticmethod
+    def is_number(s):
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False        
+        
+    def getRequiredArgs(self,func):
+        args, varargs, varkw, defaults = inspect.getargspec(func)
+        if defaults:
+            args = args[1:-len(defaults)]
+        return args   # *args and **kwargs are not required, so ignore them.
+
+    def missingArgs(self,func, argdict):
+        return set(self.getRequiredArgs(func)).difference(argdict)
+
+    def invalidArgs(self,func, argdict):
+        args, varargs, varkw, defaults = inspect.getargspec(func)
+        if varkw: return set()  # All accepted
+        return set(argdict) - set(args)
+
+    def isCallableWithArgs(self,func, argdict):
+        misargs = self.missingArgs(func, argdict)
+        invalidargs = self.invalidArgs(func, argdict)
+        lgc_pass =  not misargs and not invalidargs
+        if not lgc_pass:
+            if misargs:
+                raise Warning(self.str_object_name + ' missing arguments ' + str(misargs))
+            if invalidargs:
+                raise Warning(self.str_object_name + ' invalid arguments ' + str(invalidargs))
+        return lgc_pass    
 
     class Factory:
         def create(self,ps_parameters,str_section):

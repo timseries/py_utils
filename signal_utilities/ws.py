@@ -246,5 +246,8 @@ class WS(object):
                                      for int_level,int_orientation in self.get_levs_ors()]
             self.N = sum([np.prod(self.dims[i]) for i in np.arange(len(self.dims))])
 
+    def get_levels(self):
+        return self.int_levels
+
     def get_levs_ors(self):
         return it.product(np.arange(self.int_levels),np.arange(self.int_orientations))
