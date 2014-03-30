@@ -66,25 +66,50 @@ class Scat(object):
             [node.get_data()[...,np.newaxis] for node in nodes_list],axis=dims)
     
     def gen_image(self,traversal_method='breadth'):
-        """generates an image (numpy array) by traversing the scat tree
+        """generates dict for use in an output_montage object
         """
         #flatten out the tree
         nodes_list = self.get_nodes(traversal_method)
         #get all of the subband path lists, put in a list
         subband_paths=[node.path for node in nodes_list]
         #build a list of subband path lists, each element corresponding to a scattering depth
-        min_path_len=min([len(subband_paths) for subband_path in subband_pathss])
-        max_path_len=max([len(subband_paths) for subband_path in subband_pathss])
+        min_path_len=min([len(subband_paths) for subband_path in subband_paths])
+        max_path_len=max([len(subband_paths) for subband_path in subband_paths])
         #filter by subband path length
         subband_paths_by_level=[sorted([subband_path for subband_path in subband_paths if len(subband_path) == pathlen])
                                 for pathlen in xrange(min_path_len,max_path_len+1)]
-        #initialize montage
-        thumbnail_width = nodes_list[0].data.shape[0]
-        thumbnail_height = nodes_list[0].data.shape[1]
-        montage_cols = 0
-        montage_width = 0
-        #now loop and build the montage
-        return np.zeros(10) #todo('FIX')
+        #initialize the montage dictionary
+        montage_dict={}
+        montage_dict['thumbnail_height']=nodes_list[0].get_data().shape(0)
+        montage_dict['thumbnail_width']=nodes_list[0].get_data().shape(1)
+        montage_dict['thumbnail_columns']=self.int_orientations**(self.depth-1)
+        montage_dict['thumbnail_rows']=self.depth*self.max_transform_levels
+        montage_dict['ls_images']=[]
+        montage_dict['ls_strings']=[]
+        montage_dict['ls_locs']=[]
+        #now loop and build the montage lists of images and locations
+        for level_ix,subband_path_by_level in enumerate(subband_paths_by_level):
+            level_row_offset=level_ix*montage_dict['thumbnail_height']*self.max_transform_levels
+            prev_subband_path=subband_path_by_level[0]
+            block_col_index=0
+            for block_ix,subband_path in enumerate(subband_path_by_level):
+                node = self.retrieve(subband_path)
+                row_offset=((node.get_scale()-1)*montage_dict['thumbnail_height']
+                                  +level_row_offset)
+                if prev_subband_path[-2]!=subband_path[-2] #parent changed
+                    block_col_index+=1
+                if level_ix>1:                     
+                    level_col_offset=(block_col_index)*self.int_orientations*montage_dict['thumbnail_width']
+                    block_col_offset=mod((subband_path[-1]-1),self.int_orientations)*montage_dict['thumbnail_width']
+                else:    
+                    level_col_offset=0
+                    block_col_offset=0
+                prev_subband_path=subband_path    
+                col_offset=level_col_offset+col_offset
+                montage_dict['ls_images'].append(node.get_data())
+                montage_dict['ls_strings'].append(str(subband_path))
+                montage_dict['ls_locs'].append(np.array([row_offset,col_offset]))
+        return montage_dict
 
     @staticmethod
     def reduce(flattened_scat,method='sum'):
@@ -95,7 +120,7 @@ class Scat(object):
         sum_dims = tuple([j for j in xrange(flattened_scat.ndim-1)])
         if method=='sum' or method=='':
             return np.sum(flattened_scat,axis=sum_dims,dtype='float32')
-        if method=='average':
-            return np.average(flattened_scat,axis=sum_dims,dtype='float32')
+        elif method=='average':
+            return np.asfarray(np.average(flattened_scat,axis=sum_dims))
         else:
-            raise ValueError('no such reduce method in Scat')
+            raise ValueError('no such reduce method ' + method + ' in Scat')

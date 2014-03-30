@@ -62,7 +62,7 @@ class Results(Section):
         self.strDirectory = self.output_directory + st
         if not os.path.exists(self.strDirectory):
             os.mkdir(self.strDirectory)
-        
+dict_in['output_directory']        
     def update(self,dict_in):
         """Update the metrics in this results collection.
         """
