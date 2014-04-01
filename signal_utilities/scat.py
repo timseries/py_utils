@@ -96,7 +96,7 @@ class Scat(object):
                 node = self.retrieve(subband_path)
                 row_offset=((node.get_scale()-1)*montage_dict['thumbnail_height']
                                   +level_row_offset)
-                if prev_subband_path[-2]!=subband_path[-2] #parent changed
+                if prev_subband_path[-2]!=subband_path[-2]:#parent changed
                     block_col_index+=1
                 if level_ix>1:                     
                     level_col_offset=(block_col_index)*self.int_orientations*montage_dict['thumbnail_width']

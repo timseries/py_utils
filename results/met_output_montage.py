@@ -55,13 +55,13 @@ class OutputMontage(Metric):
         'thumbnail_height': desired height of the thumbnanil
         """
         
-        if dict_in.has_key('thumbnail_columns')
+        if dict_in.has_key('thumbnail_columns'):
             self.thumbnail_columns = dict_in['thumbnail_columns']
-        if dict_in.has_key('thumbnail_rows')
+        if dict_in.has_key('thumbnail_rows'):
             self.thumbnail_rows = dict_in['thumbnail_rows']
-        if dict_in.has_key('thumbnail_width')
+        if dict_in.has_key('thumbnail_width'):
             self.thumbnail_width = dict_in['thumbnail_width']
-        if dict_in.has_key('thumbnail_height')
+        if dict_in.has_key('thumbnail_height'):
             self.thumbnail_height = dict_in['thumbnail_height']
         #create the output directory if it doesn't exist
         if not os.path.exists(self.output_directory):

@@ -55,7 +55,7 @@ class OutputImage(Metric):
         write_data[write_data>self.input_range[1]]=self.input_range[1]
         if self.output_extension=='png':
             f = open(strPath,'wb')
-            w = png.Writer(*(write_data.shape),greyscale=True)
+            w = png.Writer(*(write_data.shape[1],write_data.shape[0]),greyscale=True)
             w.write(f,write_data)
             f.close()
         elif self.output_extension=='eps':

@@ -1,6 +1,7 @@
-#!/usr/bin/python -tt
+#!/usr/bin/python -nsupporttt
 from libtiff import TIFF as tif
 from PIL import Image
+from matplotlib import pyplot as plt
 from scipy import misc
 import numpy as np
 from collections import OrderedDict
@@ -69,7 +70,7 @@ class Input(Section):
                 for index,image in enumerate(volume):
                     file_data[:,:,index] = image
             input_file.close()
-        elif str_extension == 'jpg':
+        elif str_extension == 'jpg' or str_extension == 'png':
             file_data = misc.imread(filepath)
         elif str_extension == 'pkl':
             filehandler = open(filepath, 'r') 
