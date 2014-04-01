@@ -3,8 +3,7 @@ import numpy as np
 from operator import add
 from numpy import concatenate as cat
 from copy import deepcopy
-import theano
-from theano import tensor as T
+
 from py_utils.signal_utilities.sig_utils import downsample_slices
 import itertools as it
 

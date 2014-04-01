@@ -1,6 +1,5 @@
 #!/usr/bin/python -tt
 import numpy as np
-from libtiff import TIFF as tif
 import matplotlib.pyplot as plt
 import png
 import os

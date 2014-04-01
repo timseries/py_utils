@@ -81,7 +81,7 @@ class Results(Section):
         #collect all of the metrics into a table (list of lists, one list per row)
         #these metrics can be written to a csv file
         int_rows = max([len(metric.data) for metric in self.ls_metrics_csv])
-        table = [[j] + [metric.data[j] if j < len(metric.data) else 0 for metric in self.ls_metrics_csv] 
+        table = [[j] + [metric.data[j] if j < len(metric.data) else metric.data[-1] for metric in self.ls_metrics_csv] 
                   for j in xrange(int_rows)]
         # pdb.set_trace()
         #start a new csv file, and save the csv metrics there

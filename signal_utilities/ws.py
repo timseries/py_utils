@@ -3,8 +3,8 @@ import numpy as np
 from operator import add
 from numpy import concatenate as cat
 from copy import deepcopy
-import theano
-from theano import tensor as T
+# import theano
+# from theano import tensor as T
 from py_utils.signal_utilities.sig_utils import downsample_slices
 import itertools as it
 
@@ -145,38 +145,38 @@ class WS(object):
             int_level, int_orientation = self.lev_ori_from_subband(int_subband_index)
             self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = value
 
-    def f_flatten(self):
-        '''
-        Returns the wavelet object as a vector (Nx1 ndarray)
-        '''
-        if self.dims == None:
-            self.dims = [ary_lowpass.shape]
-            self.dims = self.dims.append([self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape \
-                         for int_level,int_orientation in zip(self.int_levels,self.int_orientations)])
-        products = map(product, self.dims)
-        # flattening:
-        xs = [T.tensor3()]
-        for _ in self.dims:
-            xs.append(T.tensor3())
-            combined = T.concatenate([T.flatten(x) for x in xs])
-        flatten = theano.function(xs, combined)
-        return flatten
+    # def f_flatten(self):
+    #     '''
+    #     Returns the wavelet object as a vector (Nx1 ndarray)
+    #     '''
+    #     if self.dims == None:
+    #         self.dims = [ary_lowpass.shape]
+    #         self.dims = self.dims.append([self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape \
+    #                      for int_level,int_orientation in zip(self.int_levels,self.int_orientations)])
+    #     products = map(product, self.dims)
+    #     # flattening:
+    #     xs = [T.tensor3()]
+    #     for _ in self.dims:
+    #         xs.append(T.tensor3())
+    #         combined = T.concatenate([T.flatten(x) for x in xs])
+    #     flatten = theano.function(xs, combined)
+    #     return flatten
             
-    def f_unflatten(self):
-        '''
-        Returns the original array, stores in the ary_lowpass and tup_coeffs objects. 
-        Assumes flattens is called first.
-        '''
-        products = map(self.product, dims)
-        # now inverse mapping:
-        inverse_input = T.vector()
-        inverse_output = []
-        accum = 0
-        for prod, dim in zip(products, self.dims) :
-            inverse_output.append(T.reshape(inverse_input[accum:accum+prod], dim))
-            accum += prod
-        unflatten = theano.function([inverse_input], inverse_output)
-        return unflatten
+    # def f_unflatten(self):
+    #     '''
+    #     Returns the original array, stores in the ary_lowpass and tup_coeffs objects. 
+    #     Assumes flattens is called first.
+    #     '''
+    #     products = map(self.product, dims)
+    #     # now inverse mapping:
+    #     inverse_input = T.vector()
+    #     inverse_output = []
+    #     accum = 0
+    #     for prod, dim in zip(products, self.dims) :
+    #         inverse_output.append(T.reshape(inverse_input[accum:accum+prod], dim))
+    #         accum += prod
+    #     unflatten = theano.function([inverse_input], inverse_output)
+    #     return unflatten
         
     def product(self,ds):
         out = 1
