@@ -58,8 +58,8 @@ class Results(Section):
             return None
         st = '/'
         if not self.overwrite_results:
-            st = '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M:%S')
-        self.strDirectory = self.output_directory + st
+            st = '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H-%M-%S')
+        self.strDirectory = self.output_directory + st + '/'
         if not os.path.exists(self.strDirectory):
             os.mkdir(self.strDirectory)
      
