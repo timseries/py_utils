@@ -304,3 +304,6 @@ def upsample(ary_input,factor=2,method='shiftadd'):
     
 def mad(data, axis=None):
     return median(absolute(data - median(data, axis)), axis)
+
+def rgb2gray(rgb):
+    return np.dot(rgb[...,:3], [0.299, 0.587, 0.144])

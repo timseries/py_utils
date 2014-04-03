@@ -51,6 +51,16 @@ class Input(Section):
                         dict_in['x'][entries[cls_index-1]][file_index] = self.read_single_file(filepath)
             #now, use the ordereddict to give the dict in dict_in['x'] a key-sorted order
             dict_in['x'] = OrderedDict(sorted(dict_in['x'].items(), key=lambda t: t[0]))
+        elif self.filename[:8]=='class_csv':
+            #use a csv file to build the dictionary of list, 
+            #each entry corresponding to a different class, with the
+            #class exemplars being elements of the lists    
+            dict_in['x'] = {}
+            with open(self.filedir+self.filename, 'rb') as csvfile:
+                csvreader = csv.reader(csvfile)
+                for row in csvreader:
+                    filepath=self.filedir+row[0]
+                    
         else: #single file case    
             file_data = self.read_single_file(self.filepath)
             if return_val:
