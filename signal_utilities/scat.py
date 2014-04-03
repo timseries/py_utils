@@ -119,8 +119,10 @@ class Scat(object):
         """
         sum_dims = tuple([j for j in xrange(flattened_scat.ndim-1)])
         if method=='sum' or method=='':
-            return np.sum(flattened_scat,axis=sum_dims,dtype='float32')
+            return np.sum(flattened_scat,axis=sum_dims,dtype='float64')
         elif method=='average':
-            return np.asfarray(np.average(flattened_scat,axis=sum_dims))
+            # return np.asfarray(np.average(flattened_scat,axis=sum_dims)) #doesnt' work on old numpy
+            normalizer=np.prod([flattened_scat.shape[j] for j in xrange(flattened_scat.ndim-1)])
+            return np.sum(np.sum(flattened_scat,axis=0,dtype='float64'),axis=0,dtype='float64')/normalizer
         else:
             raise ValueError('no such reduce method ' + method + ' in Scat')
