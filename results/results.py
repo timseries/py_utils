@@ -46,12 +46,17 @@ class Results(Section):
         self.output_directory = self.get_val('outputdirectory',False)
         self.output_fileprefix = self.get_val('outputfilename',False)
         self.overwrite_results = self.get_val('overwriteresults',True)
+        self.display_enabled = True
         
         #get screen info
-        screen = os.popen("xrandr -q -d :0").readlines()[0]
-        self.screen_size =  aa([int(screen.split()[7]), \
-                                int(screen.split()[9][:-1])], dtype = np.int)
-        self.arrange_metric_windows() #figure out the coordinates
+        screen = os.popen("xrandr -q -d :0").readlines()
+        if len(screen)>0:
+            screen=[0]
+            self.screen_size =  aa([int(screen.split()[7]), \
+                                    int(screen.split()[9][:-1])], dtype = np.int)
+                                    self.arrange_metric_windows() #figure out the coordinates
+        else: #turn display off    
+            self.display_enabled = False
         #create a folder in the output directory with the current minute's time stamp
         if self.output_directory=='':
             print ('Not writing results to file no output dir specified')
@@ -140,10 +145,13 @@ class Results(Section):
     def display(self):
         """
         Plot the metrics
-        """       
-        for metric in self.ls_metrics:
-            metric.plot()
-        plt.show()
+        """     
+        if self.display_enabled:
+            for metric in self.ls_metrics:
+                metric.plot()
+            plt.show()
+        else:
+            print 'no display enabled'
 
     class Factory:
         def create(self,ps_parameters,str_section):
