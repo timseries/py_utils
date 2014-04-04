@@ -51,10 +51,10 @@ class Results(Section):
         #get screen info
         screen = os.popen("xrandr -q -d :0").readlines()
         if len(screen)>0:
-            screen=[0]
+            screen=screen[0]
             self.screen_size =  aa([int(screen.split()[7]), \
                                     int(screen.split()[9][:-1])], dtype = np.int)
-                                    self.arrange_metric_windows() #figure out the coordinates
+            self.arrange_metric_windows() #figure out the coordinates
         else: #turn display off    
             self.display_enabled = False
         #create a folder in the output directory with the current minute's time stamp
