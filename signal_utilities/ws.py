@@ -240,11 +240,25 @@ class WS(object):
                   self.ws_vector[int_last_stride:int_this_stride:1].reshape(dim)
                   
     def get_dims(self):
+        '''Store the dimensions of the subbands as a list, (self.dims)
+         as well as the total number of coefficients (self.N)
+        '''
         if self.dims == None:
             self.dims = [self.ary_lowpass.shape]
             self.dims = self.dims + [self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape \
                                      for int_level,int_orientation in self.get_levs_ors()]
             self.N = sum([np.prod(self.dims[i]) for i in np.arange(len(self.dims))])
+
+    def downsample_scaling(self,int_level):        
+        """Return the spacial averaged version of the scaling indices 
+        Downsampled by a factor of 2 in each dimension.
+        """    
+        scaling_factor = np.sqrt(2)**self.int_dimension
+        normalizing_factor = 2.0**self.int_dimension
+        ds_scaling_coeffs = np.zeros(np.array(self.tup_scaling.shape)/2)
+        for ds_slice in self.ds_slices:
+            ds_scaling_coeffs+=self.tup_scaling[ds_slice]
+        return ds_scaling_coeffs/(normalizing_factor*ds_scaling_coeffs)
 
     def get_levels(self):
         return self.int_levels

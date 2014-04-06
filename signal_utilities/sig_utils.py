@@ -1,7 +1,7 @@
 #!/usr/bin/python -tt
 from operator import add
 import numpy as np
-from numpy import max as nmax, absolute, conj, arange, zeros, array, median
+from numpy import max as nmax, absolute, conj, arange, zeros, array, median, pad
 from numpy.fft import fftn, ifftn
 from numpy.linalg import norm
 from numpy.random import normal, rand, seed, poisson
@@ -166,11 +166,24 @@ def noise_gen(noise_params):
 def colonvec(ary_small, ary_large):
     """
     Compute the indices used to pad/crop the results of applying the fft with augmented dimensions
-    ary_small and ary_large are the bounds of the cropping region
+    ary_small and ary_large are shape tuples which define the bounds of the cropping region
     """
     int_max = np.maximum(len(ary_small),len(ary_large))
     indices = [np.s_[ary_small[i]-1:ary_large[i]] for i in np.arange(int_max)]
     return indices
+
+def pad_center(ary_input, tup_new_size):
+    """
+    Returns a new array of size tup_new_size with ary_input in the center
+    """
+    if ((ary_input.shape > tup_new_size) or 
+        (ary_input.ndim != len(tup_new_size))): #one of the dimensions is too big
+        raise ValueError('cannot pad ary_input using new shape ' + 
+                         str(tup_new_size) + ', input shape is ' + 
+                         ary_input.shape)
+    else:
+        pad_sz=(np.array(tup_new_size)-np.array(ary_input.shape))/2
+        return np.pad(ary_input,[(pad_sz[j],pad_sz[j]) for j in xrange(len(pad_sz.ndim))])
 
 def get_neighborhoods(ary_input,n_size):
     """

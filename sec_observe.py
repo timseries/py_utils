@@ -9,7 +9,7 @@ from scipy.interpolate import griddata
 import warnings
 
 from py_utils.section import Section
-from py_utils.signal_utilities.sig_utils import nd_impulse, circshift, colonvec, noise_gen, crop
+from py_utils.signal_utilities.sig_utils import nd_impulse, circshift, colonvec, noise_gen, crop, pad_center
 from py_operators.operator_comp import OperatorComp
 
 import pdb 
@@ -168,16 +168,6 @@ class Observe(Section):
                 noise_pars['distribution'] = noise_distn2
                 dict_in['y'] = (noise_gen(noise_pars)
                                 ).astype('uint16').astype('int32')
-                #inverse filtering in fourier domain to find initial solution
-                Hspec[tuple([Hspec.shape[i]/2 
-                             for i in np.arange(Hspec.ndim)])]=1.0
-                Hspec = fftn(H * Hspec)
-                Hty = (~H) * dict_in['y']
-                Hty_crop_hat = fftn(crop(Hty,dict_in['x'].shape))
-                x0 = np.real(ifftn(Hty_crop_hat/
-                                   (conj(Hspec)*Hspec
-                                    + wrf * noise_pars['variance'])))
-                dict_in['x_0'] = np.zeros(orig_shape)
                 ary_small = ar([(dict_in['x_0'].shape[i] 
                                          - x0.shape[i])/2 + 1 
                                          for i in np.arange(x0.ndim)])
@@ -185,10 +175,9 @@ class Observe(Section):
                                 for i in np.arange(x0.ndim)])
                 slices=colonvec(ary_small,ary_large)
                 dict_in['x_0'][slices]=x0
-                dict_in['y_padded'] = np.zeros(orig_shape)
-                dict_in['y_padded'][slices] = dict_in['y']
                 #simple adjoint to find initial solutino
                 dict_in['x_0'] = ((~H) * (dict_in['y'])).astype(dtype='float32')
+                dict_in['y_padded'] = pad_center(dict_in['y'],dict_in['x_0'].shape)
                 #dict_in['x_0'] = np.real(ifftn(fftn(~H * dict_in['y']) / \
                 #(conj(H.get_spectrum()) * H.get_spectrum() + wrf * noise_pars['variance'])))
             else:
