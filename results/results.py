@@ -46,7 +46,7 @@ class Results(Section):
         self.output_directory = self.get_val('outputdirectory',False)
         self.output_fileprefix = self.get_val('outputfilename',False)
         self.overwrite_results = self.get_val('overwriteresults',True)
-        self.display_enabled = False
+        self.display_enabled = True
         
         #get screen info
         if self.display_enabled:
