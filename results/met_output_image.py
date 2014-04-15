@@ -1,6 +1,6 @@
 #!/usr/bin/python -tt
 import numpy as np
-# from libtiff import TIFF as tif
+from libtiff import TIFF as tif
 import matplotlib.pyplot as plt
 import png
 from PIL import Image
@@ -21,6 +21,7 @@ class OutputImage(Metric):
         
         """
         super(OutputImage,self).__init__(ps_parameters,str_section)
+        #use self.slice=-1 for 'all',otherwise specify a slice number
         self.slice = self.get_val('slice',True, DEFAULT_SLICE)
         self.slices = None
         self.output_extension = self.get_val('outputextension', False, DEFAULT_IMAGE_EXT)
@@ -32,48 +33,63 @@ class OutputImage(Metric):
         """Takes a 2D or 3D image or volume . If a volume, display the :attr:`self.slice` if specified, otherwise display volume using Myavi. Aggregate images/slices into a volume to view the reconstruction later, or save volumes
         :param dict_in: Input dictionary which contains the referenece to the image/volume data to display and record. 
         """
+        value=dict_in[self.key]
         if self.data == []:
-            # self.x = dict_in['y_us']
+            #there always needs to be a dict_in['x'] reference image
+            # to compute the input range, for scaling the output range
             self.slices = [slice(0,None,None) if i < 2 else 
-                           slice(max(0,min(self.slice,dict_in['x_n'].shape[i])),None,None) 
-                           for i in xrange(dict_in['x_n'].ndim)]
+                           slice(max(0,min(self.slice,value.shape[i])),None,None) 
+                           for i in xrange(value.ndim)]
             self.input_range = np.asarray([np.min(dict_in['x']),
                                            np.max(dict_in['x'])])
-        self.data.append(dict_in['x_n'][self.slices])
+        self.data.append(value[self.slices])
         super(OutputImage,self).update()
 
     def plot(self):
-        plt.figure(self.figure_number)
-        plt.imshow(self.data[-1][self.slices],cmap='gray')
+        if self.data[-1].ndim==2:
+            plt.figure(self.figure_number)
+            plt.imshow(self.data[-1][self.slices],cmap='gray')
 
     def save(self,strPath='/home/outputimage'):
-        strPath = strPath + '.' + self.output_extension
-        write_data = self.data[-1][self.slices]
-        # write_data = self.x
-        #need to clip the output range to the input range
-        write_data[write_data<self.input_range[0]]=self.input_range[0]
-        write_data[write_data>self.input_range[1]]=self.input_range[1]
-        if self.output_extension=='png':
-            f = open(strPath,'wb')
-            w = png.Writer(*(write_data.shape[1],write_data.shape[0]),greyscale=True)
-            w.write(f,write_data)
-            f.close()
-        elif self.output_extension=='eps':
-            fig = plt.figure()
-            ax = plt.Axes(fig,[0,0,1,1])
-            ax.set_axis_off()
-            fig.add_axes(ax)
-            ax.imshow(write_data,cmap='gray')
-            plt.savefig(strPath, format="eps",bbox_inches='tight')
-            
-        elif self.output_extension=='tif':
-            #saving as tiff
-            if self.last_frame_only:
-                #saving just the last frame
-                output = tif.open(strPath, mode='w')
-                output.write_image(write_data)
+        if self.last_frame_only:
+            frame_iterator=(len(self.data)-1,self.data[-1])
         else:
-            raise ValueError('unsupported extension')
+            frame_iterator=enumerate(self.data)
+            #iterate through the frames    
+        for ix,frame in frame_iterator:
+            strSavePath = strPath + '_' + str(ix+1) + '.' + self.output_extension
+            write_data = frame[self.slices]
+            #clip the output range to the input range
+            write_data[write_data<self.input_range[0]]=self.input_range[0]
+            write_data[write_data>self.input_range[1]]=self.input_range[1]
+            #double precision is memory consumptive
+            write_data=np.asarray(write_data,dtype='float32')
+            if self.output_extension=='png':
+                f = open(strSavePath,'wb')
+                w = png.Writer(*(write_data.shape[1],write_data.shape[0]),greyscale=True)
+                w.write(f,write_data)
+                f.close()
+            elif self.output_extension=='eps':
+                fig = plt.figure()
+                ax = plt.Axes(fig,[0,0,1,1])
+                ax.set_axis_off()
+                fig.add_axes(ax)
+                ax.imshow(write_data,cmap='gray')
+                plt.savefig(strSavePath, format="eps",bbox_inches='tight')
+            elif self.output_extension=='tif':
+                output = tif.open(strSavePath, mode='w')
+                #saving as tiff
+                if write_data.ndim==3:
+                    #axes swapping due to an oddity in the tiff
+                    #package, writes 3-D ndarray RowsXColumnsXFrames
+                    output.write_image(write_data.swapaxes(2,0).swapaxes(2,1))
+                elif write_data.ndim==2:    
+                    output.write_image(write_data)
+                else:
+                    raise ValueError('unsupported # of dims in output.write_image tif')
+                output.close()
+            else:
+                raise ValueError('unsupported extension')
             
     class Factory:
         def create(self,ps_parameters,str_section):

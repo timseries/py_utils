@@ -2,7 +2,7 @@
 from py_utils.results.metric import Metric
 import numpy
 from numpy import mean
-from py_utils.signal_utilities.sig_utils import noise_gen, crop
+from py_utils.signal_utilities.sig_utils import noise_gen, crop_center
 
 class NMISE(Metric):
     """
@@ -23,13 +23,13 @@ class NMISE(Metric):
         """
         if self.data == []:
             if dict_in['y'].shape != dict_in['x'].shape:
-                self.x = crop(dict_in['x'],dict_in['y'].shape).flatten()
+                self.x = crop_center(dict_in['x'],dict_in['y'].shape).flatten()
                 self.y = dict_in['y'].flatten()
             else:
                 self.x = dict_in['x'].flatten()
                 self.y = dict_in['y'].flatten()
         if dict_in['y'].shape != dict_in['x_n'].shape:                
-            x_n = crop(dict_in['x_n'],dict_in['y'].shape).flatten()
+            x_n = crop_center(dict_in['x_n'],dict_in['y'].shape).flatten()
         else:
             x_n = dict_in['x_n'].flatten()
         value = mean(((x_n - self.x)**2) / self.y)

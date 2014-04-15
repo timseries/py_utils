@@ -2,7 +2,7 @@
 from numpy import log10
 from numpy.linalg import norm
 from py_utils.results.metric import Metric
-from py_utils.signal_utilities.sig_utils import noise_gen, crop
+from py_utils.signal_utilities.sig_utils import noise_gen, crop_center
 from py_utils.section_factory import SectionFactory as sf
 
 class ISNR(Metric):
@@ -33,7 +33,7 @@ class ISNR(Metric):
                 self.x = (self.transform * dict_in['x']).flatten()
             else:
                 if dict_in[self.y_key].shape != dict_in['x'].shape:
-                    self.x = crop(dict_in['x'],dict_in['y'].shape).flatten()
+                    self.x = crop_center(dict_in['x'],dict_in['y'].shape).flatten()
                 else:
                     self.x = dict_in['x'].flatten()
             self.y = dict_in[self.y_key].flatten()
@@ -41,7 +41,7 @@ class ISNR(Metric):
             x_n = (self.transform * dict_in['x_n']).flatten()
         else:
             if dict_in[self.y_key].shape != dict_in['x_n'].shape:                
-                x_n = crop(dict_in['x_n'],dict_in[self.y_key].shape).flatten()
+                x_n = crop_center(dict_in['x_n'],dict_in[self.y_key].shape).flatten()
             else:
                 x_n = dict_in['x_n'].flatten()
         value = 10 * log10((norm(self.y - self.x,2)**2)/(norm(x_n - self.x,2)**2))

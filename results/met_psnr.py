@@ -2,7 +2,7 @@
 from py_utils.results.metric import Metric
 import numpy as np
 from numpy import max as nmax, log10, mean
-from py_utils.signal_utilities.sig_utils import crop
+from py_utils.signal_utilities.sig_utils import crop_center
 
 class PSNR(Metric):
     """
@@ -26,7 +26,7 @@ class PSNR(Metric):
             if self.peak == 0:
                 self.peak = nmax(self.x)
         if dict_in['x_n'].shape != self.x.shape:
-            x_n = crop(dict_in['x_n'],dict_in['x'].shape).flatten()
+            x_n = crop_center(dict_in['x_n'],dict_in['x'].shape).flatten()
         else:
             x_n = dict_in['x_n'].flatten()
         mse = mean((x_n - self.x)**2)

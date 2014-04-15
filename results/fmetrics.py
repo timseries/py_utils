@@ -4,7 +4,7 @@ from py_utils.results.metric import Metric
 import numpy as np
 from numpy import arange, floor, meshgrid as mg, asarray, sqrt, nonzero as nz
 from numpy.linalg import norm
-from numpy.fft import ifftshift
+from numpy.fft import ifftshift, fftn
 
 class FMetrics(Section):
     """
@@ -26,7 +26,7 @@ class FMetrics(Section):
         self.weights = None #corresponding list number of elements
         
     def compute_support(self, dict_in):
-        self.x_f = dict_in['x_f']
+        self.x_f = fftn(dict_in['x'])
         int_dims = self.x_f.ndim
         ary_shape = self.x_f.shape
         gridpts = mg(*[ifftshift(arange(int(-(ary_shape[d]-1)/2.0),int((ary_shape[d]-1)/2.0))) \

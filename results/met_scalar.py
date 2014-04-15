@@ -18,7 +18,7 @@ class Scalar(Metric):
         Expects a single value or array. If array, store the whole vector or list and stop.
         """
         if not self.lgc_stop:
-            value = dict_in[self.get_val('key',False)]
+            value = dict_in[self.key]
             if (value.__class__.__name__ =='ndarray' or 
                 value.__class__.__name__ =='list'):
                 if len(value)>1:

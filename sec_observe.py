@@ -9,7 +9,7 @@ from scipy.interpolate import griddata
 import warnings
 
 from py_utils.section import Section
-from py_utils.signal_utilities.sig_utils import nd_impulse, circshift, colonvec, noise_gen, crop, pad_center
+from py_utils.signal_utilities.sig_utils import nd_impulse, circshift, colonvec, noise_gen, crop_center, pad_center
 from py_operators.operator_comp import OperatorComp
 
 import pdb 
@@ -151,35 +151,32 @@ class Observe(Section):
             dict_in['mp'] = self.get_val('maximumphotonspervoxel',True)
             dict_in['b'] = self.get_val('background', True)
             if str_domain == 'fourier':
+                H = self.Phi
+                H.set_output_fourier(False)
                 orig_shape = dict_in['x'].shape
                 Hspec = np.zeros(orig_shape)
                 dict_in['r'] = H * dict_in['x'] #Direct...
                 dict_in['w'] = self.W * dict_in['x']
-                dict_in['w'].flatten()
-                dict_in['Hxhat'] = fftn(dict_in['r'])
                 k = dict_in['mp'] / nmax(dict_in['r'])
                 dict_in['r'] = k * dict_in['r']
+                #normalize the output image to have the same
+                #maximum photon count as the ouput image
                 dict_in['x'] = k * dict_in['x']
+                dict_in['x'] = crop_center(dict_in['x'],dict_in['r'].shape).astype('float32')
+                #the spatial domain measurements, before photon counts
                 dict_in['fb'] = dict_in['r'] + dict_in['b']
-                dict_in['x'] = crop(dict_in['x'],dict_in['r'].shape)
-                dict_in['x_f'] = fftn(dict_in['x'])
+                #lambda of the poisson distn
                 noise_pars['ary_mean'] = dict_in['fb']
+                #specifying the poisson distn
                 noise_distn2 = self.get_val('noisedistribution2',False)
                 noise_pars['distribution'] = noise_distn2
+                #generating quantized (uint16) poisson measurements
                 dict_in['y'] = (noise_gen(noise_pars)
                                 ).astype('uint16').astype('int32')
-                ary_small = ar([(dict_in['x_0'].shape[i] 
-                                         - x0.shape[i])/2 + 1 
-                                         for i in np.arange(x0.ndim)])
-                ary_large = ar([ary_small[i] + x0.shape[i] - 1
-                                for i in np.arange(x0.ndim)])
-                slices=colonvec(ary_small,ary_large)
-                dict_in['x_0'][slices]=x0
-                #simple adjoint to find initial solutino
+                #simple adjoint to find initial solution
                 dict_in['x_0'] = ((~H) * (dict_in['y'])).astype(dtype='float32')
+                # pdb.set_trace()
                 dict_in['y_padded'] = pad_center(dict_in['y'],dict_in['x_0'].shape)
-                #dict_in['x_0'] = np.real(ifftn(fftn(~H * dict_in['y']) / \
-                #(conj(H.get_spectrum()) * H.get_spectrum() + wrf * noise_pars['variance'])))
             else:
                 raise Exception('domain not supported: ' + str_domain)
 

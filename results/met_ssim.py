@@ -6,7 +6,7 @@ from numpy import arange, asarray, ndarray
 from scipy.constants.constants import pi
 import ImageOps
 from py_utils.results.metric import Metric
-from py_utils.signal_utilities.sig_utils import noise_gen, crop
+from py_utils.signal_utilities.sig_utils import noise_gen, crop_center
 
 """
 This class module computes the Structured Similarity Image Metric (SSIM)
@@ -41,13 +41,13 @@ class SSIM(Metric):
     def update(self,dict_in):
         if self.data == []:
             if dict_in['y'].shape != dict_in['x'].shape:
-                self.x = crop(dict_in['x'],dict_in['y'].shape)
+                self.x = crop_center(dict_in['x'],dict_in['y'].shape)
                 self.y = dict_in['y']
             else:
                 self.x = dict_in['x']
                 self.y = dict_in['y']
         if dict_in['y'].shape != dict_in['x_n'].shape:                
-            x_n = crop(dict_in['x_n'],dict_in['y'].shape)
+            x_n = crop_center(dict_in['x_n'],dict_in['y'].shape)
         else:
             x_n = dict_in['x_n']
         if dict_in['x_n'].ndim == 2:

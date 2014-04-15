@@ -7,8 +7,6 @@ from numpy.linalg import norm
 from numpy.random import normal, rand, seed, poisson
 import itertools
 
-import pdb
-
 def nd_impulse(ary_size):
     ary_impulse = zeros(ary_size)
     ary_impulse[tuple(array(ary_impulse.shape)/2)] = 1
@@ -169,7 +167,7 @@ def colonvec(ary_small, ary_large):
     ary_small and ary_large are shape tuples which define the bounds of the cropping region
     """
     int_max = np.maximum(len(ary_small),len(ary_large))
-    indices = [np.s_[ary_small[i]-1:ary_large[i]] for i in np.arange(int_max)]
+    indices = [np.s_[int(ary_small[i]-1):int(ary_large[i])] for i in np.arange(int_max)]
     return indices
 
 def pad_center(ary_input, tup_new_size):
@@ -181,9 +179,10 @@ def pad_center(ary_input, tup_new_size):
         raise ValueError('cannot pad ary_input using new shape ' + 
                          str(tup_new_size) + ', input shape is ' + 
                          ary_input.shape)
-    else:
+    else: #inputs are OK
         pad_sz=(np.array(tup_new_size)-np.array(ary_input.shape))/2
-        return np.pad(ary_input,[(pad_sz[j],pad_sz[j]) for j in xrange(len(pad_sz.ndim))])
+        ls_pad_size_axis=[(pad_sz[j],pad_sz[j]) for j in xrange(pad_sz.size)]
+        return np.pad(ary_input,ls_pad_size_axis,mode='constant',constant_values=0)
 
 def get_neighborhoods(ary_input,n_size):
     """
@@ -271,7 +270,9 @@ def dec_to_bin(int_decimal,width=None):
         width=bin_width
     return [int(bin_string[i]) for i in xrange(bin_width+1,1,-1)] + (width-bin_width)*[0] 
     
-def crop(ary_signal, tup_crop_size):
+def crop_center(ary_signal, tup_crop_size):
+    '''Crop ary_signal symmetrically to be tup_crop_size
+    '''
     ary_half_difference = (array(ary_signal.shape) - array(tup_crop_size)) / 2
     return ary_signal[colonvec(ary_half_difference+1, ary_half_difference+array(tup_crop_size))]
 

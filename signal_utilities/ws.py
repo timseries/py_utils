@@ -249,16 +249,19 @@ class WS(object):
                                      for int_level,int_orientation in self.get_levs_ors()]
             self.N = sum([np.prod(self.dims[i]) for i in np.arange(len(self.dims))])
 
-    def downsample_scaling(self,int_level):        
+    def downsample_scaling(self):        
         """Return the spacial averaged version of the scaling indices 
         Downsampled by a factor of 2 in each dimension.
         """    
-        scaling_factor = np.sqrt(2)**self.int_dimension
-        normalizing_factor = 2.0**self.int_dimension
-        ds_scaling_coeffs = np.zeros(np.array(self.tup_scaling.shape)/2)
-        for ds_slice in self.ds_slices:
-            ds_scaling_coeffs+=self.tup_scaling[ds_slice]
-        return ds_scaling_coeffs/(normalizing_factor*ds_scaling_coeffs)
+        averaging_factor = 2.0**self.int_dimension
+        ls_downsample_scaling=[]
+        for level in xrange(self.int_levels):
+            scaling_factor = (2.0*np.sqrt(2))**level
+            ds_scaling_coeffs = np.zeros(np.array(self.tup_scaling[level].shape)/2)
+            for ds_slice in self.ds_slices:
+                ds_scaling_coeffs+=self.tup_scaling[level][ds_slice]
+            ls_downsample_scaling.append(ds_scaling_coeffs/(averaging_factor*scaling_factor))
+        return tuple(ls_downsample_scaling)
 
     def get_levels(self):
         return self.int_levels

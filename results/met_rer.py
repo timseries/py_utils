@@ -4,6 +4,7 @@ import numpy as np
 from numpy import sum as nsum, arange
 import fmetrics as fm
 from numpy import conj
+from numpy.fft import fftn
 from py_utils.section_factory import SectionFactory as sf
 
 class RER(Metric):
@@ -24,9 +25,10 @@ class RER(Metric):
         Expects a single value or array. If array, store the whole vector and stop.
         """
         if self.data == []:
-            self.x_f = dict_in['x_f'].flatten()
             self.fmetrics.compute_support(dict_in)
-        x_n_f = dict_in['x_n_f'].flatten()
+            self.x_f = self.fmetrics.x_f.flatten()
+            self.fmetrics.compute_support(dict_in)
+        x_n_f = fftn(dict_in['x_n']).flatten()
         if x_n_f.shape != self.x_f.shape:
             raise Exception ("unequal array sizes")
         else:

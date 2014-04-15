@@ -16,6 +16,9 @@ class Metric(Section):
         super(Metric,self).__init__(ps_parameters,str_section)
         self.w_coords = None #list, the x, y coords of this metric
         self.w_size = None
+        #if this metric should only be updated once (such as an initial solution)
+        self.update_once = self.get_val('updateonce',True)
+        self.update_enabled = True
         self.figure_location = self.get_val('figurelocation',True)
         self.figure = None
         self.figure_number = None
@@ -25,7 +28,8 @@ class Metric(Section):
         self.title = self.get_val('title',False)
         self.print_values = self.get_val('print',True)
         self.output_format = self.get_val('outputformat',False,'csv')
-        self.crop_plot = maximum(zeros(2),self.get_val('cropplot',True)) #2 element vector, beginning and end to crop for plotting
+        #2 element vector, beginning and end to crop for plotting
+        self.crop_plot = maximum(zeros(2),self.get_val('cropplot',True)) 
         self.crop_plot.dtype='uint8'
         self.has_csv = self.get_val('hascsv',True,True)
 
@@ -40,8 +44,10 @@ class Metric(Section):
         plt.plot(array(self.data)[sl])
 
     def update(self, value=None):
-        if value != None:
+        if value != None and self.update_enabled:
             self.data.append(value)
+        if self.update_once:
+            self.update_enabled=False    
         if self.print_values:
             print self.get_val('key',False) + ':\t' + str(self.data[-1])  
 

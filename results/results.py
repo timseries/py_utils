@@ -62,7 +62,7 @@ class Results(Section):
         if self.output_directory=='':
             print ('Not writing results to file no output dir specified')
             return None
-        st = '/'
+        st = ''
         if not self.overwrite_results:
             st = '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H-%M-%S')
         self.strDirectory = self.output_directory + st + '/'

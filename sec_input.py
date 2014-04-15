@@ -1,4 +1,4 @@
-#!/usr/bin/python -nsupporttt
+#!/usr/bin/python -tt
 from libtiff import TIFF as tif
 from PIL import Image
 from matplotlib import pyplot as plt
@@ -98,7 +98,7 @@ class Input(Section):
             if len(volume) == 1:
                 file_data = input_file.read_image()
             else: #we have a volume    
-                file_data = np.zeros([volume[0].shape[0],volume[0].shape[1],len(volume)])
+                file_data = np.zeros([volume[0].shape[0],volume[0].shape[1],len(volume)],dtype='float32')
                 for index,image in enumerate(volume):
                     file_data[:,:,index] = image
             input_file.close()
