@@ -34,7 +34,7 @@ class PSNR(Metric):
             snr_db = np.inf
         else:    
             snr_db = 10 * log10((self.peak**2)/mse)
-        value = mse, snr_db
+        value = snr_db
         self.data.append(value)
         super(PSNR,self).update()
             

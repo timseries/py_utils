@@ -62,12 +62,12 @@ class Results(Section):
         if self.output_directory=='':
             print ('Not writing results to file no output dir specified')
             return None
-        st = ''
+        st = '/' + self.output_fileprefix
         if not self.overwrite_results:
-            st = '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H-%M-%S')
+            st += '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H-%M-%S')
         self.strDirectory = self.output_directory + st + '/'
         if not os.path.exists(self.strDirectory):
-            os.mkdir(self.strDirectory)
+            os.makedirs(self.strDirectory)
      
     def update(self,dict_in):
         """Update the metrics in this results collection.
@@ -89,7 +89,6 @@ class Results(Section):
         int_rows = max([len(metric.data) for metric in self.ls_metrics_csv])
         table = [[j] + [metric.data[j] if j < len(metric.data) else metric.data[-1] for metric in self.ls_metrics_csv] 
                   for j in xrange(int_rows)]
-        # pdb.set_trace()
         #start a new csv file, and save the csv metrics there
         headers = [metric.key for metric in self.ls_metrics_csv] 
         headers.insert(0,'n')

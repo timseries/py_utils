@@ -32,14 +32,14 @@ class FMetrics(Section):
         gridpts = mg(*[ifftshift(arange(int(-(ary_shape[d]-1)/2.0),int((ary_shape[d]-1)/2.0))) \
               for d in arange(int_dims)])
         radius=0      
-        print 'gripts info'
-        print gridpts
+        # print 'gripts info'
+        # print gridpts
 
         for d in arange(int_dims):
             radius += (2 * gridpts[d] / ary_shape[d])**2
         radius = sqrt(radius)
-        print 'radius info'
-        print radius
+        # print 'radius info'
+        # print radius
 
         self.s_indices = [nz((k/self.K-self.epsilon < radius) * (radius <= (k+1)/self.K)) \
                                   for k in arange(self.K)]

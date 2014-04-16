@@ -42,8 +42,7 @@ class OutputImage(Metric):
                            for i in xrange(value.ndim)]
             self.input_range = np.asarray([np.min(dict_in['x']),
                                            np.max(dict_in['x'])])
-        self.data.append(value[self.slices])
-        super(OutputImage,self).update()
+        super(OutputImage,self).update(value[self.slices])
 
     def plot(self):
         if self.data[-1].ndim==2:

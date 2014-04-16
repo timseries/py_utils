@@ -5,7 +5,11 @@ from numpy.linalg import norm
 import fmetrics as fm
 from numpy import conj, arange
 from numpy.fft import fftn
+
+from py_utils.signal_utilities.sig_utils import crop_center
 from py_utils.section_factory import SectionFactory as sf
+
+import pdb
 
 class FourierCorrelation(Metric):
     """
@@ -27,18 +31,21 @@ class FourierCorrelation(Metric):
         if self.data == []:
             self.fmetrics.compute_support(dict_in)
             self.x_f = self.fmetrics.x_f.flatten()
+            self.x_f_shape=self.fmetrics.x_f.shape
             self.fmetrics.compute_support(dict_in)
-        x_n_f = fftn(dict_in['x_n']).flatten()
+        # pdb.set_trace()
+        x_n_f = dict_in['x_n']
         if x_n_f.shape != self.x_f.shape:
-            raise Exception ("unequal array sizes")
-        else:
-            value = [np.dot(np.take(self.x_f,self.fmetrics.s_indices[k]).flatten(), \
-                              np.take(x_n_f,self.fmetrics.s_indices[k]).flatten()) / \
-                     norm(np.take(self.x_f,self.fmetrics.s_indices[k]).flatten(),2) / \
-                     norm(np.take(x_n_f,self.fmetrics.s_indices[k]).flatten(),2) \
-                     for k in arange(self.fmetrics.K)]
-            self.data.append(tuple(value))
-            super(FourierCorrelation,self).update()
+            x_n_f = crop_center(x_n_f,self.x_f_shape)
+
+        x_n_f = fftn(x_n_f).flatten()
+        value = [np.dot(np.take(self.x_f,self.fmetrics.s_indices[k]).flatten(), \
+                          np.take(x_n_f,self.fmetrics.s_indices[k]).flatten()) / \
+                 norm(np.take(self.x_f,self.fmetrics.s_indices[k]).flatten(),2) / \
+                 norm(np.take(x_n_f,self.fmetrics.s_indices[k]).flatten(),2) \
+                 for k in arange(self.fmetrics.K)]
+        self.data.append(tuple(value))
+        super(FourierCorrelation,self).update()
             
     class Factory:
         def create(self,ps_parameters,str_section):

@@ -14,7 +14,7 @@ class NMISE(Metric):
         Class constructor for ISNR.
         """       
         super(NMISE,self).__init__(ps_parameters,str_section)        
-        self.y = None #observation
+        self.fb = None #observation
         self.x = None #ground truth
 
     def update(self,dict_in):
@@ -22,17 +22,17 @@ class NMISE(Metric):
         Expects a single value or array. If array, store the whole vector and stop.
         """
         if self.data == []:
-            if dict_in['y'].shape != dict_in['x'].shape:
-                self.x = crop_center(dict_in['x'],dict_in['y'].shape).flatten()
-                self.y = dict_in['y'].flatten()
+            if dict_in['fb'].shape != dict_in['x'].shape:
+                self.x = crop_center(dict_in['x'],dict_in['fb'].shape).flatten()
+                self.fb = dict_in['fb'].flatten()
             else:
                 self.x = dict_in['x'].flatten()
-                self.y = dict_in['y'].flatten()
-        if dict_in['y'].shape != dict_in['x_n'].shape:                
-            x_n = crop_center(dict_in['x_n'],dict_in['y'].shape).flatten()
+                self.fb = dict_in['fb'].flatten()
+        if dict_in['fb'].shape != dict_in['x_n'].shape:                
+            x_n = crop_center(dict_in['x_n'],dict_in['fb'].shape).flatten()
         else:
             x_n = dict_in['x_n'].flatten()
-        value = mean(((x_n - self.x)**2) / self.y)
+        value = mean(((x_n - self.x)**2) / self.fb)
         self.data.append(value)
         super(NMISE,self).update()    
     class Factory:

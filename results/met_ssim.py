@@ -19,7 +19,7 @@ This class module computes the Structured Similarity Image Metric (SSIM)
 """
 class SSIM(Metric):
     """
-    Base class for defining a metric
+    SSIM metric.
     """
     
     def __init__(self,ps_parameters,str_section):
@@ -89,7 +89,7 @@ class SSIM(Metric):
                 ssim_mean += ssim
                 ssim_min = np.min([ssim_min,ssim])
             ssim_mean = ssim_mean / im1.shape[2]
-        return ssim_mean, ssim_min
+        return ssim_mean
                 
     def compute_ssim(self,im1, im2):
         """
