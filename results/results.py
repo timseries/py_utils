@@ -65,6 +65,8 @@ class Results(Section):
             return None
         st = '/' + self.output_fileprefix
         self.output_directory += st + '/'
+        if not os.path.exists(self.output_directory):
+            os.makedirs(self.output_directory)
         if not self.overwrite_results:
             #old timestamping method, keep in case this is deemed better in the future
             # st += '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H-%M-%S')
