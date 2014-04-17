@@ -4,7 +4,7 @@ from numpy import arange, floor, mod
 from numpy import asarray as aa
 from py_utils.section import Section
 from py_utils.section_factory import SectionFactory as sf
-from py_utils.results.defaults import DEFAULT_CSV_EXT,DEFAULT_PARAMETERS_FILE
+from py_utils.results.defaults import DEFAULT_CSV_EXT,DEFAULT_PARAMETERS_FILE,DEFAULT_ZEROS
 
 #matplotlib.use('TkAgg')   #backend setting
 import pylab
@@ -46,6 +46,7 @@ class Results(Section):
         self.output_directory = self.get_val('outputdirectory',False)
         self.output_fileprefix = self.get_val('outputfilename',False)
         self.overwrite_results = self.get_val('overwriteresults',True)
+        self.zeros = self.get_val('zeros', True, DEFAULT_ZEROS)
         self.display_enabled = True
         
         #get screen info
@@ -63,17 +64,24 @@ class Results(Section):
             print ('Not writing results to file no output dir specified')
             return None
         st = '/' + self.output_fileprefix
+        self.output_directory += st + '/'
         if not self.overwrite_results:
-            st += '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H-%M-%S')
-        self.strDirectory = self.output_directory + st + '/'
-        if not os.path.exists(self.strDirectory):
-            os.makedirs(self.strDirectory)
+            #old timestamping method, keep in case this is deemed better in the future
+            # st += '/' + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H-%M-%S')
+            #get the count of the current numbered directories
+            files_enumerated = enumerate(os.walk(self.output_directory))
+            files,dir_info=files_enumerated.next()
+            results_count_string=str(len(dir_info[1])).zfill(self.zeros)
+            self.output_directory += '/' + results_count_string + '/'
+        if not os.path.exists(self.output_directory):
+            os.makedirs(self.output_directory)
      
     def update(self,dict_in):
         """Update the metrics in this results collection.
         """
         for metric in self.ls_metrics:
             metric.update(dict_in)
+
             
     def save(self):
         """Save the metrics in this results collection to file. 
@@ -82,17 +90,17 @@ class Results(Section):
         Does not overwrite results by default, and instead creates a new time-stamped subdirectory of self.output_directory
         """
         #save the parameters to this folder as ini, and write as csv
-        self.ps_parameters.write(self.strDirectory + self.output_fileprefix + '_config.ini')
-        self.ps_parameters.write_csv(self.strDirectory + self.output_fileprefix + '_config.' + DEFAULT_CSV_EXT)
+        self.ps_parameters.write(self.output_directory + self.output_fileprefix + '_config.ini')
+        self.ps_parameters.write_csv(self.output_directory + self.output_fileprefix + '_config.' + DEFAULT_CSV_EXT)
         #collect all of the metrics into a table (list of lists, one list per row)
         #these metrics can be written to a csv file
         int_rows = max([len(metric.data) for metric in self.ls_metrics_csv])
-        table = [[j] + [metric.data[j] if j < len(metric.data) else metric.data[-1] for metric in self.ls_metrics_csv] 
+        table = [[j] + [self.csv_cell(metric.data[j]) if j < len(metric.data) else self.csv_cell(metric.data[-1]) for metric in self.ls_metrics_csv] 
                   for j in xrange(int_rows)]
         #start a new csv file, and save the csv metrics there
         headers = [metric.key for metric in self.ls_metrics_csv] 
         headers.insert(0,'n')
-        with open(self.strDirectory + self.output_fileprefix + '_metrics.' + DEFAULT_CSV_EXT, 'w') as csvfile:
+        with open(self.output_directory + self.output_fileprefix + '_metrics.' + DEFAULT_CSV_EXT, 'w') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(headers)
             writer.writerows(table)
@@ -101,10 +109,16 @@ class Results(Section):
             self.save_metric(metric)
 
     def save_metric(self,metric):
-        metric.save(self.strDirectory + self.output_fileprefix + '_' + metric.key)
+        metric.save(self.output_directory + self.output_fileprefix + '_' + metric.key)
 
+    def csv_cell(self,metric_datum):
+        '''convert metric_datum into an acceptable format for a csv cell
+        tuples-> string of ;-delimited values
+        '''
+        return metric_datum
+    
     def get_output_path(self):
-        return self.strDirectory
+        return self.output_directory
         
     def arrange_metric_windows(self):
         """

@@ -9,8 +9,6 @@ import os
 import csv
 import cPickle
 
-import pdb
-
 from py_utils.section import Section
 
 class Input(Section):

@@ -4,10 +4,14 @@ import numpy as np
 from numpy.ma.core import exp, sqrt
 from numpy import arange, asarray, ndarray
 from scipy.constants.constants import pi
-import ImageOps
-from py_utils.results.metric import Metric
-from py_utils.signal_utilities.sig_utils import noise_gen, crop_center
+from scipy.signal import convolve2d
 
+import ImageOps
+
+from py_utils.results.metric import Metric
+from py_utils.signal_utilities.sig_utils import noise_gen, crop_center,gaussian
+
+import pdb
 """
 This class module computes the Structured Similarity Image Metric (SSIM)
 
@@ -46,14 +50,15 @@ class SSIM(Metric):
             else:
                 self.x = dict_in['x']
                 self.y = dict_in['y']
+            self.L = np.max(self.x)-np.min(self.x)
         if dict_in['y'].shape != dict_in['x_n'].shape:                
             x_n = crop_center(dict_in['x_n'],dict_in['y'].shape)
         else:
             x_n = dict_in['x_n']
         if dict_in['x_n'].ndim == 2:
-            value = self.compute_ssim(self.x, x_n)
+            value = self.compute_ssim(x_n,self.x)
         elif dict_in['x_n'].ndim == 3:    
-            value = self.compute_ssim_3d(self.x, x_n)
+            value = self.compute_ssim_3d(x_n,self.x)
         else:
             raise Exception('unsupported number of dimensions in x_n')
         self.data.append(value)
@@ -73,9 +78,10 @@ class SSIM(Metric):
             alpha = None
         return gray, alpha
 
-    def convolve_gaussian_2d(self, image, gaussian_kernel_1d):
-        result = scipy.ndimage.filters.correlate1d(image, gaussian_kernel_1d, axis = 0)
-        result = scipy.ndimage.filters.correlate1d(result, gaussian_kernel_1d, axis = 1)
+    def convolve_gaussian_2d(self, image, gaussian_kernel_2d):
+        # result = scipy.ndimage.filters.correlate1d(image, gaussian_kernel_2d, axis = 0)
+        # result = scipy.ndimage.filters.correlate1d(result, gaussian_kernel_2d, axis = 1)
+        result = convolve2d(image,gaussian_kernel_2d,'valid')
         return result
 
     def compute_ssim_3d(self, im1, im2):
@@ -85,7 +91,7 @@ class SSIM(Metric):
             ssim_mean = 0
             ssim_min = np.inf
             for i in arange(im1.shape[2]):
-                ssim = self.compute_ssim(im1,im2)
+                ssim = self.compute_ssim(im1[:,:,i],im2[:,:,i])
                 ssim_mean += ssim
                 ssim_min = np.min([ssim_min,ssim])
             ssim_mean = ssim_mean / im1.shape[2]
@@ -100,14 +106,17 @@ class SSIM(Metric):
         """
     
         # 1D Gaussian kernel definition
-        gaussian_kernel_1d = np.ndarray((self.gaussian_kernel_width))
+        gaussian_kernel_2d = np.ndarray((self.gaussian_kernel_width))
         mu = int(self.gaussian_kernel_width / 2)
         
         #Fill Gaussian kernel
         for i in xrange(self.gaussian_kernel_width):
-            gaussian_kernel_1d[i] = (1 / (sqrt(2 * pi) * (self.gaussian_kernel_sigma))) * \
+            gaussian_kernel_2d[i] = (1 / (sqrt(2 * pi) * (self.gaussian_kernel_sigma))) * \
               exp(-(((i - mu) ** 2)) / (2 * (self.gaussian_kernel_sigma ** 2)))
-
+        gshape=(self.gaussian_kernel_width,self.gaussian_kernel_width)
+        gsigma=(self.gaussian_kernel_sigma,self.gaussian_kernel_sigma)
+        gaussian_kernel_2d=gaussian(shape=gshape,sigma=gsigma)
+        # pdb.set_trace()
         # convert the images to grayscale
         if im1.__class__.__name__ == 'Image':
             img_mat_1, img_alpha_1 = _to_grayscale(im1)
@@ -129,8 +138,8 @@ class SSIM(Metric):
         img_mat_12 = img_mat_1 * img_mat_2
             
         #Means obtained by Gaussian filtering of inputs
-        img_mat_mu_1 = self.convolve_gaussian_2d(img_mat_1, gaussian_kernel_1d)
-        img_mat_mu_2 = self.convolve_gaussian_2d(img_mat_2, gaussian_kernel_1d)
+        img_mat_mu_1 = self.convolve_gaussian_2d(img_mat_1, gaussian_kernel_2d)
+        img_mat_mu_2 = self.convolve_gaussian_2d(img_mat_2, gaussian_kernel_2d)
       
         #Squares of means
         img_mat_mu_1_sq = img_mat_mu_1 ** 2
@@ -138,11 +147,11 @@ class SSIM(Metric):
         img_mat_mu_12 = img_mat_mu_1 * img_mat_mu_2
       
         #Variances obtained by Gaussian filtering of inputs' squares
-        img_mat_sigma_1_sq = self.convolve_gaussian_2d(img_mat_1_sq, gaussian_kernel_1d)
-        img_mat_sigma_2_sq = self.convolve_gaussian_2d(img_mat_2_sq, gaussian_kernel_1d)
+        img_mat_sigma_1_sq = self.convolve_gaussian_2d(img_mat_1_sq, gaussian_kernel_2d)
+        img_mat_sigma_2_sq = self.convolve_gaussian_2d(img_mat_2_sq, gaussian_kernel_2d)
       
         #Covariance
-        img_mat_sigma_12 = self.convolve_gaussian_2d(img_mat_12, gaussian_kernel_1d)
+        img_mat_sigma_12 = self.convolve_gaussian_2d(img_mat_12, gaussian_kernel_2d)
       
         #Centered squares of variances
         img_mat_sigma_1_sq -= img_mat_mu_1_sq
@@ -151,15 +160,14 @@ class SSIM(Metric):
         
         #set k1,k2 & c1,c2 to depend on L (width of color map)
         #l = 255
-        L = np.max(img_mat_2.flatten())-np.min(img_mat_2.flatten())
         k_1 = self.K[0]
-        c_1 = (k_1 * L) ** 2
+        c_1 = (k_1 * self.L) ** 2
         k_2 = self.K[1]
-        c_2 = (k_2 * L) ** 2
+        c_2 = (k_2 * self.L) ** 2
       
         #Numerator of SSIM
         num_ssim = (2 * img_mat_mu_12 + c_1) * (2 * img_mat_sigma_12 + c_2)
-      
+        
         #Denominator of SSIM
         den_ssim = (img_mat_mu_1_sq + img_mat_mu_2_sq + c_1) * \
           (img_mat_sigma_1_sq + img_mat_sigma_2_sq + c_2)

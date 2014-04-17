@@ -25,7 +25,7 @@ class OutputImage(Metric):
         self.slice = self.get_val('slice',True, DEFAULT_SLICE)
         self.slices = None
         self.output_extension = self.get_val('outputextension', False, DEFAULT_IMAGE_EXT)
-        self.last_frame_only = self.get_val('LastFrameOnly',True) #just the last frame of 'data'
+        self.last_frame_only = self.get_val('lastframeonly',True) #just the last frame of 'data'
         self.print_values = 0 #we never want to print array data...
         self.has_csv = False #we can't save these to csv format like other metrics
         
@@ -51,12 +51,12 @@ class OutputImage(Metric):
 
     def save(self,strPath='/home/outputimage'):
         if self.last_frame_only:
-            frame_iterator=(len(self.data)-1,self.data[-1])
+            frame_iterator=[('',self.data[-1])]
         else:
             frame_iterator=enumerate(self.data)
             #iterate through the frames    
         for ix,frame in frame_iterator:
-            strSavePath = strPath + '_' + str(ix+1) + '.' + self.output_extension
+            strSavePath = strPath + str(ix) + '.' + self.output_extension
             write_data = frame[self.slices]
             #clip the output range to the input range
             write_data[write_data<self.input_range[0]]=self.input_range[0]
