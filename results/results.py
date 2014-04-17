@@ -36,7 +36,7 @@ class Results(Section):
                                if self.ls_metrics[i].has_csv]                   
         self.ls_metrics_no_csv = [self.ls_metrics[i] 
                                   for i in arange(len(self.ls_metrics))
-                                  if not self.ls_metrics[i].has_csv]                   
+                                  if not self.ls_metrics[i].has_csv]                  
         self.grid_size = aa([self.get_val('figuregridwidth',True), \
                              self.get_val('figuregridheight',True)], dtype = np.int)
         self.desktop = self.get_val('desktop',True)
