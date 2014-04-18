@@ -97,16 +97,19 @@ class Results(Section):
         self.ps_parameters.write_csv(self.output_directory + self.output_fileprefix + '_config.' + DEFAULT_CSV_EXT)
         #collect all of the metrics into a table (list of lists, one list per row)
         #these metrics can be written to a csv file
-        int_rows = max([len(metric.data) for metric in self.ls_metrics_csv])
-        table = [[j] + [self.csv_cell(metric.data[j]) if j < len(metric.data) else self.csv_cell(metric.data[-1]) for metric in self.ls_metrics_csv] 
-                  for j in xrange(int_rows)]
-        #start a new csv file, and save the csv metrics there
-        headers = [metric.key for metric in self.ls_metrics_csv] 
-        headers.insert(0,'n')
-        with open(self.output_directory + self.output_fileprefix + '_metrics.' + DEFAULT_CSV_EXT, 'w') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(headers)
-            writer.writerows(table)
+        if len(self.ls_metrics_csv)>0:
+            int_rows = max([len(metric.data) for metric in self.ls_metrics_csv])
+            table = [[j] + [self.csv_cell(metric.data[j]) if j < len(metric.data) 
+                            else self.csv_cell(metric.data[-1]) 
+                            for metric in self.ls_metrics_csv] 
+                            for j in xrange(int_rows)]
+            #start a new csv file, and save the csv metrics there
+            headers = [metric.key for metric in self.ls_metrics_csv] 
+            headers.insert(0,'n')
+            with open(self.output_directory + self.output_fileprefix + '_metrics.' + DEFAULT_CSV_EXT, 'w') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(headers)
+                writer.writerows(table)
         #save the other metrics to file by invoking their respective save methods
         for metric in self.ls_metrics_no_csv:
             self.save_metric(metric)

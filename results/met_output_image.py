@@ -40,8 +40,12 @@ class OutputImage(Metric):
             self.slices = [slice(0,None,None) if i < 2 else 
                            slice(max(0,min(self.slice,value.shape[i])),None,None) 
                            for i in xrange(value.ndim)]
-            self.input_range = np.asarray([np.min(dict_in['x']),
-                                           np.max(dict_in['x'])])
+            if dict_in.has_key('x'):
+                im_range_key='x'
+            else: #no ground truth
+                im_range_key='y'
+            self.input_range = np.asarray([np.min(dict_in[im_range_key]),
+                                           np.max(dict_in[im_range_key])])
         super(OutputImage,self).update(value[self.slices])
 
     def plot(self):
