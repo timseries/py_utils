@@ -4,6 +4,7 @@ from libtiff import TIFF as tif
 import matplotlib.pyplot as plt
 import png
 from PIL import Image
+import os
 
 from py_utils.results.metric import Metric
 from py_utils.results.defaults import DEFAULT_SLICE,DEFAULT_IMAGE_EXT
@@ -46,7 +47,7 @@ class OutputImage(Metric):
                 im_range_key='y'
             self.input_range = np.asarray([np.min(dict_in[im_range_key]),
                                            np.max(dict_in[im_range_key])])
-        super(OutputImage,self).update(value[self.slices])
+            super(OutputImage,self).update(value[self.slices])
 
     def plot(self):
         if self.data[-1].ndim==2:
@@ -54,13 +55,22 @@ class OutputImage(Metric):
             plt.imshow(self.data[-1][self.slices],cmap='gray')
 
     def save(self,strPath='/home/outputimage'):
-        if self.last_frame_only:
+        if len(self.data)==0:
+            return
+        if self.last_frame_only or self.update_once:
             frame_iterator=[('',self.data[-1])]
+            ix_offset=''
         else:
             frame_iterator=enumerate(self.data)
             #iterate through the frames    
+            #find the correct index offset, given the current path (save_often mode)
+            #strPath should contain everything except the current iterate
+            files_enumerated = enumerate(os.walk(os.path.dirname(strPath)))
+            base_name=os.path.basename(strPath)
+            files,dir_info=files_enumerated.next()
+            ix_offset=len([file_name for file_name in dir_info[2] if base_name in file_name])
         for ix,frame in frame_iterator:
-            strSavePath = strPath + str(ix) + '.' + self.output_extension
+            strSavePath = strPath + str(ix_offset+ix) + '.' + self.output_extension
             write_data = frame[self.slices]
             #clip the output range to the input range
             write_data[write_data<self.input_range[0]]=self.input_range[0]
@@ -93,6 +103,7 @@ class OutputImage(Metric):
                 output.close()
             else:
                 raise ValueError('unsupported extension')
+        super(OutputImage,self).save()
             
     class Factory:
         def create(self,ps_parameters,str_section):

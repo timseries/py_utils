@@ -59,20 +59,6 @@ class Results(Section):
                 self.arrange_metric_windows() #figure out the coordinates
             else: #turn display off    
                 self.display_enabled = False
-     
-    def update(self,dict_in):
-        """Update the metrics in this results collection.
-        """
-        for metric in self.ls_metrics:
-            metric.update(dict_in)
-
-            
-    def save(self):
-        """Save the metrics in this results collection to file. 
-        This aggregates all fo the 'csv' output metrics together into one csv file.
-        The other metrics are dealt with separately.
-        Does not overwrite results by default, and instead creates a new time-stamped subdirectory of self.output_directory
-        """
         #create a folder in the output directory with the current minute's time stamp
         if self.output_directory=='':
             print ('Not writing results to file no output dir specified')
@@ -91,10 +77,25 @@ class Results(Section):
             self.output_directory += '/' + results_count_string + '/'
         if not os.path.exists(self.output_directory):
             os.makedirs(self.output_directory)
-
         #save the parameters to this folder as ini, and write as csv
         self.ps_parameters.write(self.output_directory + self.output_fileprefix + '_config.ini')
         self.ps_parameters.write_csv(self.output_directory + self.output_fileprefix + '_config.' + DEFAULT_CSV_EXT)
+
+    def update(self,dict_in):
+        """Update the metrics in this results collection.
+        """
+        for metric in self.ls_metrics:
+            metric.update(dict_in)
+            if metric.save_often:
+                metric.save(self.get_metric_path(metric))
+
+            
+    def save(self): #really should be save_metrics
+        """Save the metrics in this results collection to file. 
+        This aggregates all fo the 'csv' output metrics together into one csv pdatefile.
+        The other metrics are dealt with separately.
+        Does not overwrite results by default, and instead creates a new time-stamped subdirectory of self.output_directory
+        """
         #collect all of the metrics into a table (list of lists, one list per row)
         #these metrics can be written to a csv file
         if len(self.ls_metrics_csv)>0:
@@ -115,7 +116,10 @@ class Results(Section):
             self.save_metric(metric)
 
     def save_metric(self,metric):
-        metric.save(self.output_directory + self.output_fileprefix + '_' + metric.key)
+        metric.save(self.get_metric_path(metric))
+
+    def get_metric_path(self,metric):
+        return self.output_directory + self.output_fileprefix + '_' + metric.key
 
     def csv_cell(self,metric_datum):
         '''convert metric_datum into an acceptable format for a csv cell

@@ -32,6 +32,7 @@ class Metric(Section):
         self.crop_plot = maximum(zeros(2),self.get_val('cropplot',True)) 
         self.crop_plot.dtype='uint8'
         self.has_csv = self.get_val('hascsv',True,True)
+        self.save_often = self.get_val('saveoften',True,False)
 
     def plot(self):
         plt.figure(self.figure_number)
@@ -46,13 +47,15 @@ class Metric(Section):
     def update(self, value=None):
         if value != None and self.update_enabled:
             self.data.append(value)
-        if self.update_once:
-            self.update_enabled=False    
+            if self.update_once:
+                self.update_enabled=False    
         if self.print_values:
             print self.get_val('key',False) + ':\t' + str(self.data[-1])  
 
-    def save(self,strPath='/home/'): pass
-         
+    def save(self,strPath='/home/'):
+        #empty out the data after the defived class has done the saving
+        self.data = []
+        
     class Factory:
         def create(self,ps_parameters,str_section):
             return Metric(ps_parameters,str_section)
