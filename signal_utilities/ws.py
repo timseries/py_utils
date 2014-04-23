@@ -18,10 +18,14 @@ class WS(object):
         """
         Class constructor for WS
         """
-        self.ary_lowpass = ary_lowpass.copy()
-        self.tup_coeffs = deepcopy(tup_coeffs)
+        # self.ary_lowpass = ary_lowpass.copy()
+        # self.tup_coeffs = deepcopy(tup_coeffs)
+        self.ary_lowpass = ary_lowpass
+        self.tup_coeffs = tup_coeffs
+        # if tup_scaling:
+        #     self.tup_scaling = deepcopy(tup_scaling)
         if tup_scaling:
-            self.tup_scaling = deepcopy(tup_scaling)
+            self.tup_scaling = tup_scaling
         self.ary_size = np.dot(2,ary_lowpass.shape) 
         self.int_levels = len(tup_coeffs)
         self.int_dimension = ary_lowpass.ndim

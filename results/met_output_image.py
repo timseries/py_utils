@@ -80,7 +80,7 @@ class OutputImage(Metric):
                 ax.imshow(write_data,cmap='gray')
                 plt.savefig(strSavePath, format="eps",bbox_inches='tight')
             elif self.output_extension=='tif':
-                output = tif.open(strSavePath, mode='wb')
+                output = tif.open(strSavePath, mode='w')
                 #saving as tiff
                 if write_data.ndim==3:
                     #axes swapping due to an oddity in the tiff
