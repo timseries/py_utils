@@ -51,9 +51,11 @@ class ParameterStruct(object):
         else:
             for key, value in zip(ls_keys,ls_values):
                 if value.__class__.__name__!='str':
-                    value = str(value)
                     if value.__class__.__name__=='ndarray':
+                        value = str(value)
                         value=value[2:-2]#strip off the brackets
+                    else:
+                        value = str(value)
                 self.config.set(str_section, key, value)
 
     def get_section_dict(self,str_section):
