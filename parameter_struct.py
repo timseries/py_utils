@@ -52,7 +52,7 @@ class ParameterStruct(object):
             for key, value in zip(ls_keys,ls_values):
                 if value.__class__.__name__!='str':
                     value = str(value)
-                    if value.__class__.name=='ndarray':
+                    if value.__class__.__name__=='ndarray':
                         value=value[2:-2]#strip off the brackets
                 self.config.set(str_section, key, value)
 
