@@ -260,7 +260,7 @@ class WS(object):
         averaging_factor = 2.0**self.int_dimension
         ls_downsample_scaling=[]
         for level in xrange(self.int_levels):
-            scaling_factor = (2.0*np.sqrt(2))**level
+            scaling_factor = (2.0*np.sqrt(2))**(level+1)
             ds_scaling_coeffs = np.zeros(np.array(self.tup_scaling[level].shape)/2)
             for ds_slice in self.ds_slices:
                 ds_scaling_coeffs+=self.tup_scaling[level][ds_slice]
