@@ -53,7 +53,7 @@ class ParameterStruct(object):
                 if value.__class__.__name__!='str':
                     if value.__class__.__name__=='ndarray':
                         value = str(value)
-                        value=value[2:-2]#strip off the brackets
+                        value=value[2:-1]#strip off the brackets
                     else:
                         value = str(value)
                 self.config.set(str_section, key, value)
