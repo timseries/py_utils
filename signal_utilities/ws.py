@@ -8,8 +8,6 @@ from copy import deepcopy
 from py_utils.signal_utilities.sig_utils import downsample_slices
 import itertools as it
 
-import pdb
-
 class WS(object):
     """
     WS class for storing and retreiving and performing operations on wavelet subbands. 
@@ -18,12 +16,8 @@ class WS(object):
         """
         Class constructor for WS
         """
-        # self.ary_lowpass = ary_lowpass.copy()
-        # self.tup_coeffs = deepcopy(tup_coeffs)
         self.ary_lowpass = ary_lowpass
         self.tup_coeffs = tup_coeffs
-        # if tup_scaling:
-        #     self.tup_scaling = deepcopy(tup_scaling)
         if tup_scaling:
             self.tup_scaling = tup_scaling
         self.ary_size = np.dot(2,ary_lowpass.shape) 
@@ -271,4 +265,4 @@ class WS(object):
         return self.int_levels
 
     def get_levs_ors(self):
-        return it.product(np.arange(self.int_levels),np.arange(self.int_orientations))
+        return it.product(np.arange(self.int_levels),np.arange(self.pint_orientations))

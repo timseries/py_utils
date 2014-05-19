@@ -38,7 +38,6 @@ class Input(Section):
         #dict_in['x']={'class1':[exemplar1,exemplar2,...],'class2':[exemplar1,exemplar2,...]}
         #where exemplar is a two list ['entryid',data], data is an nparray
         if self.filename=='class_directories':
-            
             #using the directory structure to build a dictionary of lists, each
             #dictionary entry corresponding to a different class, with the 
             #class exemplars elements of the lists
