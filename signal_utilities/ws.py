@@ -182,7 +182,7 @@ class WS(object):
             out *= d
         return out
 
-    def flatten(self,lgc_real=True,duplicate=False):
+    def flatten(self,lgc_real=False,duplicate=False):
         '''
         Flattens the wavelet object as a vector (Nx1 ndarray) as a member (a vector view of the data). 
         lgc_real: whether or not to use purely real ouput. In this case, real/imag parts are stored consecutively.
@@ -219,7 +219,7 @@ class WS(object):
 
     def unflatten(self):
         '''
-        Stores the ws_vector back in the ws object, assumes w_ve
+        Stores the ws_vector back in the ws object
         '''
         self.get_dims()
         int_last_stride = 0
