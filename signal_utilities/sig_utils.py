@@ -255,7 +255,7 @@ def shift_slices(shift):
 
 def downsample_slices(int_dim):
     """Return a list of list of slices used for downsampling by a factor of 2
-    in every dimension, with appropriate offsets
+    in every dimension, for each of 2**int_dim offsets
     """
     num_slices = 2**int_dim
     return [[slice(dec_to_bin(j,int_dim)[i],None,2) for i in xrange(int_dim)] for j in xrange(num_slices)]

@@ -27,7 +27,7 @@ class Input(Section):
         self.filename = self.get_val('filename', False)
         #use the config's dir as a reference pt if path not specified or not full
         self.filepath = self.filedir + '/' + self.filename
-        if not (self.filepath[0] == '/' or self.filepath == ''): #absolute, or no, path specified
+        if not (self.filepath[0] == '/' or self.filepath == ''): #relative, or no, path specified
             self.filepath = self.ps_parameters.str_file_dir + '/' + self.filepath
           
     def read(self,dict_in,return_val=False):
@@ -88,6 +88,8 @@ class Input(Section):
                 dict_in['x'] = file_data
 
     def read_single_file(self,filepath):
+        if not os.path.isfile(filepath):
+            return None
         str_extension = filepath.split('.')[-1]
         if str_extension == 'tif':#2d image or 3d stack of images
             input_file = tif.open(self.filepath, mode='r')

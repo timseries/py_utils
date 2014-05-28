@@ -20,13 +20,13 @@ class WS(object):
         self.tup_coeffs = tup_coeffs
         if tup_scaling:
             self.tup_scaling = tup_scaling
-        self.ary_size = np.dot(2,ary_lowpass.shape) 
+        self.ary_shape = 2*ary_lowpass.shape
         self.int_levels = len(tup_coeffs)
         self.int_dimension = ary_lowpass.ndim
         self.ds_slices = downsample_slices(self.int_dimension)
         self.int_orientations = tup_coeffs[0].shape[-1]
         self.int_subbands = self.int_levels * self.int_orientations + 1
-        self.dims = None #dimensions of all of the subbands
+        self.dims = None #dimensions of all of the subbands stored in a list
         self.N = None #total number of elements
         self.ws_vector = None
 
@@ -88,12 +88,10 @@ class WS(object):
         else:
             subband_index = s+self.int_orientations
         if subband_index==0: #downsample by averaging
-            # pdb.set_trace()
-            s_parent_us = self.subband_group_sum(subband_index,'children')[self.ds_slices[0]]
+            s_parent_us = self.subband_group_sum(subband_index,'children',True,False)[self.ds_slices[0]]
         else:
             s_parent = self.get_subband(subband_index)
             s_parent_us = np.zeros(2*np.asarray(s_parent.shape))
-            #todo: generalize this to arbitrary dimensions
             for j in xrange(len(self.ds_slices)):
                 s_parent_us[self.ds_slices[j]]=s_parent
         return s_parent_us
@@ -133,6 +131,7 @@ class WS(object):
 
     def modulus(self,lowpass=False,coefficients=True):
         """Takes the modulus across all of the subands, and returns a new WS object
+        lowpass and coefficients flags not implemented
         """
         return WS(np.abs(self.ary_lowpass),np.abs(self.tup_coeffs))
         
@@ -188,7 +187,8 @@ class WS(object):
         lgc_real: whether or not to use purely real ouput. In this case, real/imag parts are stored consecutively.
         If duplicate=True, then we simply copy the elements twice. This is useful for thresholding using the complex modulus.
         '''
-        self.get_dims()
+        if not self.dims:
+            self.get_dims()
         #allocate the vector interface once
         if self.ws_vector == None:
             self.is_complex = 0
@@ -221,7 +221,8 @@ class WS(object):
         '''
         Stores the ws_vector back in the ws object
         '''
-        self.get_dims()
+        if not self.dims:
+            self.get_dims()
         int_last_stride = 0
         int_this_stride = np.prod(self.ary_lowpass.shape)
         self.ary_lowpass = self.ws_vector[int_last_stride:int_this_stride:1].reshape(self.ary_lowpass.shape)
