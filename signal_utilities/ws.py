@@ -17,7 +17,7 @@ class WS(object):
         Class constructor for WS
         """
         self.ary_lowpass = ary_lowpass
-        self.tup_coeffs = tup_coeffs
+        self.tup_coeffs = tuple(tup_coeffs)
         if tup_scaling:
             self.tup_scaling = tup_scaling
         self.ary_shape = 2*ary_lowpass.shape
@@ -129,11 +129,21 @@ class WS(object):
             w_parent /= divisor
         return w_parent    
 
-    def modulus(self,lowpass=False,coefficients=True):
+    def modulus(self:
         """Takes the modulus across all of the subands, and returns a new WS object
-        lowpass and coefficients flags not implemented
         """
         return WS(np.abs(self.ary_lowpass),np.abs(self.tup_coeffs))
+    
+    def energy(self):
+        """Takes the modulus across all of the subands, and returns a new WS object
+        """
+        return WS(np.abs(self.ary_lowpass)**2,np.abs(self.tup_coeffs)**2)
+        
+    def sum(self,summand):
+        return WS(self.ary_lowpass+summand,tuple(np.array(self.tup_coeffs)+summand))
+
+    def invert(self):
+        return WS(1.0/self.ary_lowpass,tuple(1.0/np.array(self.tup_coeffs)))
         
     def set_subband(self,int_subband_index,value):
         if int_subband_index == 0:
@@ -191,9 +201,12 @@ class WS(object):
             self.get_dims()
         #allocate the vector interface once
         if self.ws_vector == None:
-            self.is_complex = 0
+            self.is_complex = False
             if str(self.tup_coeffs[0][(Ellipsis,0)].dtype)[0:7]=='complex':
                 self.is_complex = True
+                #int_if is either 1 or 2, the increment factor variable.
+                #int_if is the 1 by default. If a real output is needed (lgc_real) from a complex input, then we need to store
+                #the real an imaginary part in alternate locations in the vector. 
             self.int_if = self.is_complex * lgc_real + 1
             if duplicate:
                 self.int_if = 2
@@ -217,12 +230,14 @@ class WS(object):
                     self.ws_vector[int_last_stride+1:int_this_stride:self.int_if] = np.imag(ary_tup_coeffs)
         return self.ws_vector
 
-    def unflatten(self):
+    def unflatten(self,new_ws_vector=None):
         '''
         Stores the ws_vector back in the ws object
         '''
         if not self.dims:
             self.get_dims()
+        if new_ws_vector:
+            self.ws_vector=new_ws_vector
         int_last_stride = 0
         int_this_stride = np.prod(self.ary_lowpass.shape)
         self.ary_lowpass = self.ws_vector[int_last_stride:int_this_stride:1].reshape(self.ary_lowpass.shape)
