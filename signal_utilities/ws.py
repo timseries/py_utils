@@ -27,7 +27,7 @@ class WS(object):
         self.int_orientations = tup_coeffs[0].shape[-1]
         self.int_subbands = self.int_levels * self.int_orientations + 1
         self.dims = None #dimensions of all of the subbands stored in a list
-        self.N = None #total number of elements
+        self.size = None #total number of elements
         self.ws_vector = None
 
     def lev_ori_from_subband(self,int_subband_index):
@@ -129,7 +129,7 @@ class WS(object):
             w_parent /= divisor
         return w_parent    
 
-    def modulus(self:
+    def modulus(self):
         """Takes the modulus across all of the subands, and returns a new WS object
         """
         return WS(np.abs(self.ary_lowpass),np.abs(self.tup_coeffs))
@@ -139,11 +139,20 @@ class WS(object):
         """
         return WS(np.abs(self.ary_lowpass)**2,np.abs(self.tup_coeffs)**2)
         
-    def sum(self,summand):
+    def __sum__(self,summand):
         return WS(self.ary_lowpass+summand,tuple(np.array(self.tup_coeffs)+summand))
+
+    def __mul__(self,multiplicand):
+        return WS(multiplicand*self.ary_lowpass,tuple(multiplicand*np.array(self.tup_coeffs)))
 
     def invert(self):
         return WS(1.0/self.ary_lowpass,tuple(1.0/np.array(self.tup_coeffs)))
+        
+    def precision(self,regularizer=.01):
+        """Generate a precision WS object from this WS object
+        """
+        return WS(1.0/(np.abs(self.ary_lowpass)**2+regularizer),
+                  1.0/(np.abs(self.tup_coeffs)**2+regularizer))
         
     def set_subband(self,int_subband_index,value):
         if int_subband_index == 0:
@@ -210,7 +219,7 @@ class WS(object):
             self.int_if = self.is_complex * lgc_real + 1
             if duplicate:
                 self.int_if = 2
-            int_len_ws_vector = self.N*(self.int_if)-(self.is_complex*lgc_real)*np.prod(self.dims[0])#counteract double counting of real lowpass
+            int_len_ws_vector = self.size*(self.int_if)-(self.is_complex*lgc_real)*np.prod(self.dims[0])#counteract double counting of real lowpass
             self.ws_vector = np.zeros(int_len_ws_vector,dtype='float32')
         int_this_stride = np.product(self.ary_lowpass.shape)
         int_last_stride = 0
@@ -251,17 +260,17 @@ class WS(object):
                    1.0j*self.ws_vector[int_last_stride+1:int_this_stride+1:2].reshape(dim))
             else:
                 self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = \
-                  self.ws_vector[int_last_stride:int_this_stride:1].reshape(dim)
+                self.ws_vector[int_last_stride:int_this_stride:1].reshape(dim)
                   
     def get_dims(self):
         '''Store the dimensions of the subbands as a list, (self.dims)
-         as well as the total number of coefficients (self.N)
+         as well as the total number of coefficients (self.size)
         '''
         if self.dims == None:
             self.dims = [self.ary_lowpass.shape]
             self.dims = self.dims + [self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape \
                                      for int_level,int_orientation in self.get_levs_ors()]
-            self.N = sum([np.prod(self.dims[i]) for i in np.arange(len(self.dims))])
+            self.size = sum([np.prod(self.dims[i]) for i in np.arange(len(self.dims))])
 
     def downsample_scaling(self):        
         """Return the spacial averaged version of the scaling indices 

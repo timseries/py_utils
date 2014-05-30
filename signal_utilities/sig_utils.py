@@ -316,6 +316,32 @@ def upsample(ary_input,factor=2,method='shiftadd'):
     else:
         raise ValueError('unsupported upsample method ' + method)
     
+def flatten_list(ls_ary):
+    '''Flatten a list of objects which have the flatten() method
+    Assumes each element is the same size
+    '''
+    temp_ary=ls_ary[0].flatten()
+    ary_size=temp_ary.size()
+    vec_ix=0
+    output_ary=np.zeros(ary_size*len(ls_ary))
+    for ary_unflat in ls_ary:
+        output_ary[vec_ix:vec_ix+ary_size]=ary_unflat.flatten()
+        vec_ix+=ary_size
+    return output_ary
+
+def unflatten_list(ary_input,num_partitions):
+    '''Split ary_input into num_partitions equal-sized arrays and store 
+    these in a list
+    '''
+    int_part_size=ary_input.size/num_partitions
+    ls_ary=[]
+    vec_ix=0
+    for partition in xrange(num_partitions):
+        ls_ary.append(ary_input[vec_ix:vec_ix+int_part_size])
+        vec_ix+=int_part_size
+    return ls_ary
+
+
 def mad(data, axis=None):
     return median(absolute(data - median(data, axis)), axis)
 
