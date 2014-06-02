@@ -16,10 +16,10 @@ class WS(object):
         """
         Class constructor for WS
         """
-        self.ary_lowpass = ary_lowpass
-        self.tup_coeffs = tuple(tup_coeffs)
+        self.ary_lowpass = ary_lowpass.copy()
+        self.tup_coeffs = deepcopy(tuple(tup_coeffs))
         if tup_scaling:
-            self.tup_scaling = tup_scaling
+            self.tup_scaling = deepcopy(tup_scaling)
         self.ary_shape = 2*ary_lowpass.shape
         self.int_levels = len(tup_coeffs)
         self.int_dimension = ary_lowpass.ndim
@@ -140,7 +140,7 @@ class WS(object):
         """
         return WS(np.abs(self.ary_lowpass)**2,np.abs(self.tup_coeffs)**2)
         
-    def __sum__(self,summand):
+    def __add__(self,summand):
         return WS(self.ary_lowpass+summand,tuple(np.array(self.tup_coeffs)+summand))
 
     def __mul__(self,multiplicand):
@@ -201,63 +201,75 @@ class WS(object):
             out *= d
         return out
 
-    def flatten(self,lgc_real=False,duplicate=False):
+    def flatten(self,lgc_real=False):
         '''
         Flattens the wavelet object as a vector (Nx1 ndarray) as a member (a vector view of the data). 
         lgc_real: whether or not to use purely real ouput. In this case, real/imag parts are stored consecutively.
         If duplicate=True, then we simply copy the elements twice. This is useful for thresholding using the complex modulus.
         '''
-        #allocate the vector interface once
-        if self.ws_vector == None:
-            self.is_complex = False
-            if str(self.tup_coeffs[0][(Ellipsis,0)].dtype)[0:7]=='complex':
-                self.is_complex = True
-                #int_if is either 1 or 2, the increment factor variable.
-                #int_if is the 1 by default. If a real output is needed (lgc_real) from a complex input, then we need to store
-                #the real an imaginary part in alternate locations in the vector. 
-            self.int_if = self.is_complex * lgc_real + 1
-            if duplicate:
-                self.int_if = 2
-            int_len_ws_vector = self.size*(self.int_if)-(self.is_complex*lgc_real)*np.prod(self.dims[0])#counteract double counting of real lowpass
-            self.ws_vector = np.zeros(int_len_ws_vector,dtype='float32')
-        int_this_stride = np.product(self.ary_lowpass.shape)
-        int_last_stride = 0
+        int_wav_cplx = self.is_wavelet_complex()
+        int_low_cplx = self.is_lowpass_complex()
+        #int_if is either 1 or 2, the increment factor variable.
+        #int_if is the 1 by default. If a real output is needed (lgc_real) from a complex input, then we need to store
+        #the real an imaginary part in alternate locations in the vector. 
+        int_if_low = int_low_cplx * lgc_real + 1
+        int_if_wav = int_wav_cplx * lgc_real + 1
+        int_len_ws_vector = self.size*(int_if_wav)-(int_if_low==1)*(int_if_wav==2)*np.prod(self.ary_lowpass.size)
+        ws_vector_dtype='complex64'
+        if lgc_real or not (int_wav_cplx and int_wav_cplx):
+            ws_vector_dtype='float32'
+        if self.ws_vector == None or int_len_ws_vector!=self.ws_vector.size:
+            self.ws_vector = np.zeros(int_len_ws_vector,dtype=ws_vector_dtype)
+        int_stride = self.ary_lowpass.size*int_if_wav
+        int_p_stride = 0
         #the lowpass image
-        self.ws_vector[int_last_stride:int_this_stride:1] = self.ary_lowpass.flatten()
+        if int_if_low==2:k
+            self.ws_vector[int_p_stride:int_stride:2] = np.real(self.ary_lowpass.flatten())
+            self.ws_vector[int_p_stride+1:int_stride+1:2] = np.imag(self.ary_lowpass.flatten())
+        else:
+            self.ws_vector[int_p_stride:int_stride:1] = self.ary_lowpass.flatten()
         #the highpass coefficients
         for int_level,int_orientation in self.get_levs_ors():
-            dim = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape
-            int_last_stride = int_this_stride
-            int_this_stride = np.product(dim)*self.int_if + int_last_stride
+            sz = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].size
+            int_p_stride = int_stride
+            int_stride = sz*int_if_wav + int_p_stride
             ary_tup_coeffs = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].flatten()
-            self.ws_vector[int_last_stride:int_this_stride:self.int_if] = np.real(ary_tup_coeffs)
-            if self.int_if==2:
-                if duplicate:
-                    self.ws_vector[int_last_stride+1:int_this_stride:self.int_if] = np.real(ary_tup_coeffs)
-                else:    
-                    self.ws_vector[int_last_stride+1:int_this_stride:self.int_if] = np.imag(ary_tup_coeffs)
+            if int_if_wav==2:
+                self.ws_vector[int_p_stride:int_stride:2] = np.real(ary_tup_coeffs)
+                self.ws_vector[int_p_stride+1:int_stride+1:2] = np.imag(ary_tup_coeffs)
+            else:    
+                self.ws_vector[int_p_stride:int_stride:1] = ary_tup_coeffs
         return self.ws_vector
 
-    def unflatten(self,new_ws_vector=None):
+    def unflatten(self,new_ws_vector=None,lgc_real=False):
         '''
         Stores the ws_vector back in the ws object
         '''
-        if new_ws_vector:
+        if new_ws_vector!=None:
             self.ws_vector=new_ws_vector
-        int_last_stride = 0
-        int_this_stride = np.prod(self.ary_lowpass.shape)
-        self.ary_lowpass = self.ws_vector[int_last_stride:int_this_stride:1].reshape(self.ary_lowpass.shape)
+        int_wav_cplx = self.is_wavelet_complex()
+        int_low_cplx = self.is_lowpass_complex()
+        int_if_low = int_low_cplx * lgc_real + 1
+        int_if_wav = int_wav_cplx * lgc_real + 1
+        int_p_stride = 0
+        int_stride = self.ary_lowpass.size*int_if_low
+        if int_if_low==2:
+            self.ary_lowpass = (self.ws_vector[int_p_stride:int_stride:2] + 
+                                1.0j*self.ws_vector[int_p_stride+1:int_stride+1:2]).reshape(self.ary_lowpass.shape)
+        else:
+            self.ary_lowpass = self.ws_vector[int_p_stride:int_stride:1].reshape(self.ary_lowpass.shape)
         for int_level,int_orientation in self.get_levs_ors():
             dim = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape
-            int_last_stride = int_this_stride
-            int_this_stride = np.product(dim)*(self.int_if) + int_last_stride
+            sz = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].size
+            int_p_stride = int_stride
+            int_stride = sz*(self.int_if) + int_p_stride
             if self.int_if==2:
                 self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = \
-                  (self.ws_vector[int_last_stride:int_this_stride:2].reshape(dim) + \
-                   1.0j*self.ws_vector[int_last_stride+1:int_this_stride+1:2].reshape(dim))
+                  (self.ws_vector[int_p_stride:int_stride:2].reshape(dim) + \
+                   1.0j*self.ws_vector[int_p_stride+1:int_stride+1:2].reshape(dim))
             else:
                 self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = \
-                self.ws_vector[int_last_stride:int_this_stride:1].reshape(dim)
+                self.ws_vector[int_p_stride:int_stride:1].reshape(dim)
                   
     def get_dims(self):
         '''Store the dimensions of the subbands as a list, (self.dims)
@@ -288,3 +300,9 @@ class WS(object):
 
     def get_levs_ors(self):
         return it.product(np.arange(self.int_levels),np.arange(self.int_orientations))
+
+    def is_wavelet_complex(self):
+        return str(self.tup_coeffs[0][(Ellipsis,0)].dtype)[0:7]=='complex'
+
+    def is_lowpass_complex(self):
+        return str(self.ary_lowpass.dtype)[0:7]=='complex'
