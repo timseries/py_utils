@@ -25,10 +25,13 @@ class Input(Section):
         #used for structured file, or specific class directories, or even to specifiy no reading at all 'none'
         self.filemember = self.get_val('filemember', False) 
         self.filename = self.get_val('filename', False)
-        #use the config's dir as a reference pt if path not specified or not full
-        self.filepath = self.filedir + '/' + self.filename
-        if not (self.filepath[0] == '/' or self.filepath == ''): #relative, or no, path specified
-            self.filepath = self.ps_parameters.str_file_dir + '/' + self.filepath
+        #use the config's dir as a reference pt if path not specified or not absolute
+        #relative paths do not begin with a '/' by convention
+        if (self.filedir == '' or 
+            self.filedir[0] != '/'): #relative to config file, or no dir specified
+            self.filepath = self.ps_parameters.str_file_dir + self.filedir + '/' + self.filename
+        else:
+            self.filepath = self.filedir + '/' + self.filename
           
     def read(self,dict_in,return_val=False):
         """

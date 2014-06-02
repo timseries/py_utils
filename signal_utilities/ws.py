@@ -28,6 +28,7 @@ class WS(object):
         self.int_subbands = self.int_levels * self.int_orientations + 1
         self.dims = None #dimensions of all of the subbands stored in a list
         self.size = None #total number of elements
+        self.get_dims()
         self.ws_vector = None
 
     def lev_ori_from_subband(self,int_subband_index):
@@ -206,8 +207,6 @@ class WS(object):
         lgc_real: whether or not to use purely real ouput. In this case, real/imag parts are stored consecutively.
         If duplicate=True, then we simply copy the elements twice. This is useful for thresholding using the complex modulus.
         '''
-        if not self.dims:
-            self.get_dims()
         #allocate the vector interface once
         if self.ws_vector == None:
             self.is_complex = False
@@ -243,8 +242,6 @@ class WS(object):
         '''
         Stores the ws_vector back in the ws object
         '''
-        if not self.dims:
-            self.get_dims()
         if new_ws_vector:
             self.ws_vector=new_ws_vector
         int_last_stride = 0
@@ -290,4 +287,4 @@ class WS(object):
         return self.int_levels
 
     def get_levs_ors(self):
-        return it.product(np.arange(self.int_levels),np.arange(self.pint_orientations))
+        return it.product(np.arange(self.int_levels),np.arange(self.int_orientations))
