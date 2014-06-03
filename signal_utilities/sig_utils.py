@@ -129,7 +129,7 @@ def circshift(ary_input, tup_shifts):
                                 ndmin=ary_input.ndim) - shift,
                                 length)
 
-        shape = np.ones(ary_input.ndim)
+        shape = np.ones(ary_input.ndim,dtype='uint16')
         shape[dim] = ary_input.shape[dim]
         index = np.reshape(index, shape)
         idx.append(index.astype(int))
@@ -321,7 +321,7 @@ def flatten_list(ls_ary):
     Assumes each element is the same size
     '''
     temp_ary=ls_ary[0].flatten()
-    ary_size=temp_ary.size()
+    ary_size=temp_ary.size
     vec_ix=0
     output_ary=np.zeros(ary_size*len(ls_ary))
     for ary_unflat in ls_ary:
@@ -341,6 +341,16 @@ def unflatten_list(ary_input,num_partitions):
         vec_ix+=int_part_size
     return ls_ary
 
+def inv_block_diag(csr_block_diag_mtx):
+    '''input is a sparse block diagonal matrix
+    ouput is the inverted version of this matrix
+    '''
+    csr_rows=np.nonzero(csr_block_diag_mtx)
+    csr_cols=csr_rows[1]
+    csr_rows=csr_rows[0]
+    #scan through the rows, which should be sorted
+    
+    
 
 def mad(data, axis=None):
     return median(absolute(data - median(data, axis)), axis)

@@ -141,10 +141,21 @@ class WS(object):
         return WS(np.abs(self.ary_lowpass)**2,np.abs(self.tup_coeffs)**2)
         
     def __add__(self,summand):
-        return WS(self.ary_lowpass+summand,tuple(np.array(self.tup_coeffs)+summand))
+        if summand.__class__.__name__=='WS':
+            return WS(self.ary_lowpass+summand.ary_lowpass,tuple(np.array(self.tup_coeffs)+np.array(summand.tup_coeffs)))
+        else:
+            return WS(self.ary_lowpass+summand,tuple(np.array(self.tup_coeffs)+summand))
 
+    def nonzero(self):
+        '''returns a WS object with True in all of the non-zero positions
+        '''
+        return WS(self.ary_lowpass!=0,tuple(np.array(self.tup_coeffs)!=0))
+    
     def __mul__(self,multiplicand):
-        return WS(multiplicand*self.ary_lowpass,tuple(multiplicand*np.array(self.tup_coeffs)))
+        if multiplicand.__class__.__name__=='WS':
+            return WS(multiplicand.ary_lowpass*self.ary_lowpass,tuple(np.array(multiplicand.tup_coeffs)*np.array(self.tup_coeffs)))
+        else:
+            return WS(multiplicand*self.ary_lowpass,tuple(multiplicand*np.array(self.tup_coeffs)))
 
     def invert(self):
         return WS(1.0/self.ary_lowpass,tuple(1.0/np.array(self.tup_coeffs)))
@@ -223,7 +234,7 @@ class WS(object):
         int_stride = self.ary_lowpass.size*int_if_wav
         int_p_stride = 0
         #the lowpass image
-        if int_if_low==2:k
+        if int_if_low==2:
             self.ws_vector[int_p_stride:int_stride:2] = np.real(self.ary_lowpass.flatten())
             self.ws_vector[int_p_stride+1:int_stride+1:2] = np.imag(self.ary_lowpass.flatten())
         else:
@@ -262,14 +273,15 @@ class WS(object):
             dim = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape
             sz = self.tup_coeffs[int_level][(Ellipsis,int_orientation)].size
             int_p_stride = int_stride
-            int_stride = sz*(self.int_if) + int_p_stride
-            if self.int_if==2:
+            int_stride = sz*int_if_wav + int_p_stride
+            if int_if_wav==2:
                 self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = \
                   (self.ws_vector[int_p_stride:int_stride:2].reshape(dim) + \
                    1.0j*self.ws_vector[int_p_stride+1:int_stride+1:2].reshape(dim))
             else:
                 self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = \
                 self.ws_vector[int_p_stride:int_stride:1].reshape(dim)
+        return self        
                   
     def get_dims(self):
         '''Store the dimensions of the subbands as a list, (self.dims)
