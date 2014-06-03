@@ -5,7 +5,13 @@ from numpy import max as nmax, absolute, conj, arange, zeros, array, median, pad
 from numpy.fft import fftn, ifftn
 from numpy.linalg import norm
 from numpy.random import normal, rand, seed, poisson
+from scipy.stats import mode
+from scipy.sparse import csr_matrix
+
 import itertools
+from collections import defaultdict
+
+import pdb
 
 def nd_impulse(ary_size):
     ary_impulse = zeros(ary_size)
@@ -341,17 +347,156 @@ def unflatten_list(ary_input,num_partitions):
         vec_ix+=int_part_size
     return ls_ary
 
-def inv_block_diag(csr_block_diag_mtx):
-    '''input is a sparse block diagonal matrix
-    ouput is the inverted version of this matrix
+def inv_block_diag(csr_bdiag, dict_in=None):
+    '''input is a square sparse (csr) block diagonal matrix (non-overlapping)
+    which may or may not be permuted. This linear-time function forms each of the blocks
+    separately, inverts them, and then stores the entries back into a new csr_bdiag
+    ouput. Fancy indexing in csr matrices is expensive and unsupported as of scipy .14
     '''
-    csr_rows=np.nonzero(csr_block_diag_mtx)
-    csr_cols=csr_rows[1]
-    csr_rows=csr_rows[0]
-    #scan through the rows, which should be sorted
+    #check to see if this block_diagonal matrix structure has been memoized
+    if dict_in!=None and dict_in.has_key('dict_bdiag'):
+        dict_bdiag=dict_in['dict_bdiag']
+        csr_rows=dict_bdiag['csr_rows']
+        csr_cols=dict_bdiag['csr_cols']
+    else:
+        dict_bdiag={}
+        dict_in['dict_bdiag']=dict_bdiag
+        csr_rows=np.nonzero(csr_bdiag)
+        csr_cols=csr_rows[1]
+        csr_rows=csr_rows[0]
+        #sort by the row number
+        sorted_temp=sorted(zip(csr_rows,csr_cols))
+        csr_rows=np.array([sorted_temp_pt[0] for sorted_temp_pt in sorted_temp],dtype='uint32')
+        csr_cols=np.array([sorted_temp_pt[1] for sorted_temp_pt in sorted_temp],dtype='uint32')
+        #create the parameter dict
+        dict_bdiag['int_max_block_sz']=mode(csr_rows)[1]
+        dict_bdiag['csr_rows']=csr_rows
+        dict_bdiag['csr_cols']=csr_cols
+        #create a block size mask, speed things up using a hashtable
+        dict_temp=defaultdict(lambda:0)
+        for row_num in csr_rows:
+            dict_temp[row_num]+=1
+        block_sz_mask=np.array([dict_temp[row_num] for row_num in csr_rows],dtype='uint32')
+        dict_bdiag['block_sizes']=sorted(np.unique(dict_temp.values()))
+        # del dict_temp
+        #store index arrays for each block size
+        for block_sz in dict_bdiag['block_sizes']:
+            blk_ix=np.nonzero(block_sz_mask==block_sz)[0]#all of the block indices for csr_rows/cols
+            #need to permute these block indices so that we have block diagonal matrices
+            #we'll do a simple permutation and assume the off-diagonal elements 
+            #for each block are all the same, so that we only need to enforce 
+            #the diagonal components to be in the correct locations
+            on_diag=np.nonzero(csr_rows[blk_ix]==csr_cols[blk_ix])[0]
+            off_diag=np.nonzero(csr_rows[blk_ix]!=csr_cols[blk_ix])[0]
+            bad_blk_ix=blk_ix[on_diag[0::block_sz+2]]
+            #TODO finish this!
+            csr_rows[bad_blk_ix]
+            int_std=block_sz**2
+            # perm_array=np.tile(np.arange(int_std),blk_ix.size/blk_ix)
+            
+            for int_start in xrange(0,blk_ix.size,int_std):
+                blk_ix_blk=blk_ix[int_start:int_std+int_std]
+                
+             dict_bdiag[str(block_sz)+'rows']=csr_rows[blk_ix]
+             dict_bdiag[str(block_sz)+'cols']=csr_cols[blk_ix]
+             dict_bdiag[block_sz]=blk_ix
+    #now we can do the actual inverting, storing in a new vector
+    new_csr_data=np.zeros(csr_rows.size,)
+    for block_sz in dict_bdiag['block_sizes']:
+        int_std=block_sz**2 #stride to extract the blocks, when necessary
+        blk_csr_rows=dict_bdiag[str(block_sz)+'rows']
+        blk_csr_cols=dict_bdiag[str(block_sz)+'cols']
+        #when you fancy index into a csr mtx, you get a matrix, hence the funny indexing to convert to array
+        ary_blk_v=np.asarray(csr_bdiag[blk_csr_rows,blk_csr_cols])[0,:]
+        ary_blk_vsz=ary_blk_v.size
+        if block_sz==1:
+            ary_blk_v=1.0/ary_blk_v
+        elif block_sz==2:    
+            #for [[a b],[c d]]
+            #can use accelerated 2x2 block matrix inversion 1/det(A)*[[a22 -a12],[-a21 a11]]
+            #detA = 1/(a11a22-a12a21)
+            #these are stored in the vector format as [a11 a12 a21 a22] since we've sorted by rows
+            minor_mtx=np.zeros(ary_blk_vsz,)
+            a11=ary_blk_v[0::int_std]
+            a12=ary_blk_v[1::int_std]
+            a21=ary_blk_v[2::int_std]
+            a22=ary_blk_v[3::int_std]
+            minor_mtx[0::int_std]=a22
+            minor_mtx[1::int_std]=-a12
+            minor_mtx[2::int_std]=-a21
+            minor_mtx[3::int_std]=a11
+            pdb.set_trace()
+            ary_blk_v=minor_mtx / np.repeat(a11*a22-a12*a21,int_std)
+        elif block_sz==4:
+            #taken from http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html
+            minor_mtx=np.zeros(ary_blk_vsz,)
+            a11=ary_blk_v[0::int_std]
+            a12=ary_blk_v[1::int_std]
+            a13=ary_blk_v[2::int_std]
+            a14=ary_blk_v[3::int_std]
+            a21=ary_blk_v[4::int_std]
+            a22=ary_blk_v[5::int_std]
+            a23=ary_blk_v[6::int_std]
+            a24=ary_blk_v[7::int_std]
+            a31=ary_blk_v[8::int_std]
+            a32=ary_blk_v[9::int_std]
+            a33=ary_blk_v[10::int_std]
+            a34=ary_blk_v[11::int_std]
+            a41=ary_blk_v[12::int_std]
+            a42=ary_blk_v[13::int_std]
+            a43=ary_blk_v[14::int_std]
+            a44=ary_blk_v[15::int_std]
+            b11=a22*a33*a44+a23*a34*a42+a24*a32*a43-a22*a34*a43-a23*a32*a44-a24*a33*a42
+            b12=a12*a34*a43+a13*a32*a44+a14*a33*a42-a12*a33*a44-a13*a34*a42-a14*a32*a43
+            b13=a12*a23*a44+a13*a24*a42+a14*a22*a43-a12*a24*a43-a13*a22*a44-a14*a23*a42
+            b14=a12*a24*a33+a13*a22*a34+a14*a23*a32-a12*a23*a34-a13*a24*a32-a14*a22*a33
+            b21=a21*a34*a43+a23*a31*a44+a24*a33*a41-a21*a33*a44-a23*a34*a41-a24*a31*a43
+            b22=a11*a33*a44+a13*a34*a41+a14*a31*a43-a11*a34*a43-a13*a31*a44-a14*a33*a41
+            b23=a11*a24*a43+a13*a21*a44+a13*a23*a41-a11*a23*a44-a13*a24*a41-a14*a21*a43
+            b24=a11*a23*a34+a13*a24*a31+a14*a21*a33-a11*a24*a33-a13*a21*a34-a14*a23*a31
+            b31=a21*a32*a44+a22*a34*a41+a24*a31*a42-a21*a34*a42-a22*a31*a44-a24*a32*a41
+            b32=a11*a34*a42+a12*a31*a44+a14*a32*a41-a11*a32*a44-a12*a34*a41-a14*a31*a42
+            b33=a11*a22*a44+a12*a24*a41+a14*a21*a42-a11*a24*a42-a12*a21*a44-a14*a22*a41
+            b34=a11*a24*a32+a12*a21*a34+a13*a22*a31-a11*a22*a34-a12*a24*a31-a14*a21*a32
+            b41=a21*a33*a42+a22*a31*a43+a23*a32*a41-a21*a32*a43-a22*a33*a41-a23*a31*a42
+            b42=a11*a32*a43+a12*a33*a41+a13*a31*a42-a11*a33*a42-a12*a31*a43-a13*a32*a41
+            b43=a11*a23*a42+a12*a21*a43+a13*a22*a41-a11*a22*a43-a12*a23*a41-a13*a21*a42
+            b44=a11*a22*a33+a12*a23*a31+a13*a21*a32-a11*a23*a32-a12*a21*a33-a13*a22*a31
+            minor_mtx[0::int_std]=b11
+            minor_mtx[1::int_std]=b12
+            minor_mtx[2::int_std]=b13
+            minor_mtx[3::int_std]=b13
+            minor_mtx[4::int_std]=b21
+            minor_mtx[5::int_std]=b22
+            minor_mtx[6::int_std]=b23
+            minor_mtx[7::int_std]=b24
+            minor_mtx[8::int_std]=b31
+            minor_mtx[9::int_std]=b32
+            minor_mtx[10::int_std]=b33
+            minor_mtx[11::int_std]=b34
+            minor_mtx[12::int_std]=b41
+            minor_mtx[13::int_std]=b42
+            minor_mtx[14::int_std]=b43
+            minor_mtx[15::int_std]=b44
+            ary_blk_v=minor_mtx / np.repeat(  a11*a22*a33*a44+a11*a23*a34*a42+a11*a24*a32*a43
+                                             +a12*a21*a34*a43+a12*a23*a31*a44+a12*a24*a33*a41
+                                             +a13*a21*a32*a44+a13*a22*a34*a41+a13*a24*a31*a42
+                                             +a14*a21*a33*a42+a13*a22*a31*a43+a14*a23*a32*a41
+                                             -a11*a22*a34*a43-a11*a23*a32*a44-a11*a24*a33*a42
+                                             -a12*a21*a33*a44-a12*a23*a34*a41-a12*a24*a31*a43
+                                             -a13*a21*a34*a42-a13*a22*a31*a44-a13*a24*a32*a41
+                                             -a14*a21*a32*a43-a14*a22*a33*a41-a14*a23*a31*a42,int_std)
+        else:
+            #no quick way to invert other-sized blocks in one go (for now), so do them individually
+            num_blocks=ary_blksiz_v.size/int_stride
+            #inversion and replacement
+            ary_blk_v=np.hstack([inv(ary_blk_v[b_*int_std:
+                                               (b_+1)*int_std].reshape(int_std,int_std)).flatten()
+                                               for b_ in xrange(num_blocks)])
+        #store elements corresponding to inverted blocks in new array
+        new_csr_data[dict_bdiag[block_sz]]=ary_blk_v
+    return csr_matrix((new_csr_data,(csr_rows,csr_cols)),shape=csr_bdiag.shape)
     
-    
-
 def mad(data, axis=None):
     return median(absolute(data - median(data, axis)), axis)
 

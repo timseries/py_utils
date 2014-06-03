@@ -8,6 +8,8 @@ from copy import deepcopy
 from py_utils.signal_utilities.sig_utils import downsample_slices
 import itertools as it
 
+import pdb
+
 class WS(object):
     """
     WS class for storing and retreiving and performing operations on wavelet subbands. 
@@ -138,22 +140,26 @@ class WS(object):
     def energy(self):
         """Takes the modulus across all of the subands, and returns a new WS object
         """
-        return WS(np.abs(self.ary_lowpass)**2,np.abs(self.tup_coeffs)**2)
+        return WS(np.abs(self.ary_lowpass)**2,tuple([np.abs(ary_coeffs)**2 for ary_coeffs in self.tup_coeffs]))
         
     def __add__(self,summand):
         if summand.__class__.__name__=='WS':
-            return WS(self.ary_lowpass+summand.ary_lowpass,tuple(np.array(self.tup_coeffs)+np.array(summand.tup_coeffs)))
+            return WS(self.ary_lowpass+summand.ary_lowpass,tuple([self.tup_coeffs[j] + summand.tup_coeffs[j] for j in xrange(self.int_levels)]))
         else:
-            return WS(self.ary_lowpass+summand,tuple(np.array(self.tup_coeffs)+summand))
+            return WS(self.ary_lowpass+summand,tuple([ary_coeffs+summand for ary_coeffs in self.tup_coeffs]))
 
     def nonzero(self):
         '''returns a WS object with True in all of the non-zero positions
         '''
-        return WS(self.ary_lowpass!=0,tuple(np.array(self.tup_coeffs)!=0))
+        return WS(np.array(self.ary_lowpass,dtype=bool),
+                  tuple([np.array(ary_coeffs,dtype=bool) 
+                         for ary_coeffs in self.tup_coeffs]))
     
     def __mul__(self,multiplicand):
         if multiplicand.__class__.__name__=='WS':
-            return WS(multiplicand.ary_lowpass*self.ary_lowpass,tuple(np.array(multiplicand.tup_coeffs)*np.array(self.tup_coeffs)))
+            return WS(multiplicand.ary_lowpass*self.ary_lowpass,
+                      tuple([self.tup_coeffs[j] * multiplicand.tup_coeffs[j] 
+                             for j in xrange(self.int_levels)]))
         else:
             return WS(multiplicand*self.ary_lowpass,tuple(multiplicand*np.array(self.tup_coeffs)))
 
