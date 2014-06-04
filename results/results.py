@@ -47,7 +47,7 @@ class Results(Section):
         self.output_fileprefix = self.get_val('outputfilename',False)
         self.overwrite_results = self.get_val('overwriteresults',True)
         self.zeros = self.get_val('zeros', True, DEFAULT_ZEROS)
-        self.display_enabled = False
+        self.display_enabled = True
         
         #get screen info
         if self.display_enabled:
@@ -88,8 +88,6 @@ class Results(Section):
             metric.update(dict_in)
             if metric.save_often:
                 metric.save(self.get_metric_path(metric))
-
-            
     def save(self): #really should be save_metrics
         """Save the metrics in this results collection to file. 
         This aggregates all fo the 'csv' output metrics together into one csv pdatefile.

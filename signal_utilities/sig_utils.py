@@ -335,6 +335,18 @@ def flatten_list(ls_ary):
         vec_ix+=ary_size
     return output_ary
 
+def flatten_list_to_csr(ls_ary):
+    '''Flatten a list of objects which have the flatten() method to a 
+    csr object.
+    Assumes each element is the same size
+    '''
+    ary_flattened=flatten_list(ls_ary)
+    ary_flattened_sz=ary_flattened.size
+    ary_diag=np.nonzero(ary_flattened)[0]
+    return csr_matrix((ary_flattened[ary_flattened!=0],
+                       (ary_diag,ary_diag)), 
+                       shape=(ary_flattened_sz,ary_flattened_sz))
+
 def unflatten_list(ary_input,num_partitions):
     '''Split ary_input into num_partitions equal-sized arrays and store 
     these in a list
@@ -378,28 +390,37 @@ def inv_block_diag(csr_bdiag, dict_in=None):
             dict_temp[row_num]+=1
         block_sz_mask=np.array([dict_temp[row_num] for row_num in csr_rows],dtype='uint32')
         dict_bdiag['block_sizes']=sorted(np.unique(dict_temp.values()))
-        # del dict_temp
+        del dict_temp
         #store index arrays for each block size
         for block_sz in dict_bdiag['block_sizes']:
-            blk_ix=np.nonzero(block_sz_mask==block_sz)[0]#all of the block indices for csr_rows/cols
-            #need to permute these block indices so that we have block diagonal matrices
-            #we'll do a simple permutation and assume the off-diagonal elements 
-            #for each block are all the same, so that we only need to enforce 
-            #the diagonal components to be in the correct locations
-            on_diag=np.nonzero(csr_rows[blk_ix]==csr_cols[blk_ix])[0]
-            off_diag=np.nonzero(csr_rows[blk_ix]!=csr_cols[blk_ix])[0]
-            bad_blk_ix=blk_ix[on_diag[0::block_sz+2]]
-            #TODO finish this!
-            csr_rows[bad_blk_ix]
             int_std=block_sz**2
-            # perm_array=np.tile(np.arange(int_std),blk_ix.size/blk_ix)
-            
-            for int_start in xrange(0,blk_ix.size,int_std):
-                blk_ix_blk=blk_ix[int_start:int_std+int_std]
-                
-             dict_bdiag[str(block_sz)+'rows']=csr_rows[blk_ix]
-             dict_bdiag[str(block_sz)+'cols']=csr_cols[blk_ix]
-             dict_bdiag[block_sz]=blk_ix
+            blk_ix=np.nonzero(block_sz_mask==block_sz)[0]#all of the block indices for csr_rows/cols
+            #need to permute these block indices so that
+            #the diagonal components to be in the correct locations
+            #and we assume arrangement of off diagonal elements doesn't matter
+            #because they are all the same. without any additional info about csr_bdiag
+            #this is the best we can do
+            new_blk_ix=zip(csr_rows[blk_ix],csr_cols[blk_ix],blk_ix)
+            new_blk_ix=sorted(new_blk_ix,key=lambda x:(x[0],not(x[0]==x[1]),x[1]))
+            new_blk_ix=np.array([new_blk_ix_pt[2] for new_blk_ix_pt in new_blk_ix],dtype='uint32')
+            #now new_blk_ix has the diagonal elements in every block_sz position within each block
+            #this is not correct, so we'll correct this in the following loop
+            #at least now we have an efficient way to index the diagonal components in each block
+            #the following offsets are with respect to the new_blk_indexing
+            all_blk_offsets=set(np.arange(int_std))
+            diag_new_blk_offsets=set(np.arange(0,int_std,block_sz))
+            diag_blk_offsets=set(np.arange(0,int_std,block_sz+1))
+            off_diag_new_blk_offsets=sorted(all_blk_offsets.difference(diag_new_blk_offsets))
+            off_diag_blk_offsets=sorted(all_blk_offsets.difference(diag_blk_offsets))
+            #assign the each of diagonal components to the correct locations in blk_ix
+            for blk_offset,new_blk_offset in zip(diag_blk_offsets,diag_new_blk_offsets):
+                blk_ix[blk_offset::int_std]=new_blk_ix[new_blk_offset::int_std]
+            #assign the remaining off-diagonal components to the correct locations in blk_ix
+            for blk_offset,new_blk_offset in zip(off_diag_blk_offsets,off_diag_new_blk_offsets):
+                blk_ix[blk_offset::int_std]=new_blk_ix[new_blk_offset::int_std]
+            dict_bdiag[str(block_sz)+'rows']=csr_rows[blk_ix]
+            dict_bdiag[str(block_sz)+'cols']=csr_cols[blk_ix]
+            dict_bdiag[block_sz]=blk_ix
     #now we can do the actual inverting, storing in a new vector
     new_csr_data=np.zeros(csr_rows.size,)
     for block_sz in dict_bdiag['block_sizes']:
@@ -425,7 +446,6 @@ def inv_block_diag(csr_bdiag, dict_in=None):
             minor_mtx[1::int_std]=-a12
             minor_mtx[2::int_std]=-a21
             minor_mtx[3::int_std]=a11
-            pdb.set_trace()
             ary_blk_v=minor_mtx / np.repeat(a11*a22-a12*a21,int_std)
         elif block_sz==4:
             #taken from http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html

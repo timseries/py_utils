@@ -53,7 +53,7 @@ class Metric(Section):
             print self.get_val('key',False) + ':\t' + str(self.data[-1])  
 
     def save(self,strPath='/home/'):
-        #empty out the data after the defived class has done the saving
+        #empty out the data after the derived class has done the saving
         self.data = []
         
     class Factory:

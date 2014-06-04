@@ -9,6 +9,8 @@ import os
 from py_utils.results.metric import Metric
 from py_utils.results.defaults import DEFAULT_SLICE,DEFAULT_IMAGE_EXT
 
+import pdb
+
 class OutputImage(Metric):
     """
     Class for outputting and image or volume, and allowing a redraw/update.
@@ -26,7 +28,8 @@ class OutputImage(Metric):
         self.slice = self.get_val('slice',True, DEFAULT_SLICE)
         self.slices = None
         self.output_extension = self.get_val('outputextension', False, DEFAULT_IMAGE_EXT)
-        self.last_frame_only = self.get_val('lastframeonly',True) #just the last frame of 'data'
+        #just the last 'frame' of image data, where frames are indexed by iteration, for legacy support (superceded by .update_once)
+        self.last_frame_only = self.get_val('lastframeonly',True) 
         self.print_values = 0 #we never want to print array data...
         self.has_csv = False #we can't save these to csv format like other metrics
         

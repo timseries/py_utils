@@ -22,7 +22,7 @@ class WS(object):
         self.tup_coeffs = deepcopy(tuple(tup_coeffs))
         if tup_scaling:
             self.tup_scaling = deepcopy(tup_scaling)
-        self.ary_shape = tuple(2*np.array(tup_coeffs[0][(Ellipsis,int_orientation)].shape))
+        self.ary_shape = tuple(2*np.array(tup_coeffs[0][(Ellipsis,0)].shape))
         self.int_levels = len(tup_coeffs)
         self.int_dimension = ary_lowpass.ndim
         self.ds_slices = downsample_slices(self.int_dimension)
