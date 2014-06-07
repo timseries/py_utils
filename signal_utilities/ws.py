@@ -85,16 +85,18 @@ class WS(object):
         Returns the upsampled parent of s, by copying the elements of the parent.
         The output array should be the same size as s.
         """
-        if s+self.int_orientations>=self.int_subbands:
+        if s>=self.int_subbands-self.int_orientations:
             #we actually need to downsample in this case, as we're using the scaling coefficients
             subband_index = 0
+        elif s<0:
+            raise ValueError('Invalid subband index: ' + str(s))
         else:
             subband_index = s+self.int_orientations
-        if subband_index==0: #downsample by averaging
+        if subband_index==0: #downsample by averaging the lowpass suband
             s_parent_us = self.subband_group_sum(subband_index,'children',True,False)[self.ds_slices[0]]
         else:
             s_parent = self.get_subband(subband_index)
-            s_parent_us = np.zeros(2*np.asarray(s_parent.shape))
+            s_parent_us = np.zeros(2*np.asarray(s_parent.shape),dtype=s_parent.dtype)
             for j in xrange(len(self.ds_slices)):
                 s_parent_us[self.ds_slices[j]]=s_parent
         return s_parent_us
@@ -102,10 +104,10 @@ class WS(object):
     def subband_group_sum(self,s,group_type,average=True, energy=True):
         """
         Computes the sum (or average) (energy) of one of two group types for subband s
-        Group_type can be either 'parent_children' or 'parent_child'
+        Group_type can be either 'parent_children' or  'children' or 'parent_child'
         """
         if group_type != 'children':
-            w_parent = self.get_upsampled_parent(s)
+            w_parent = self.get_upsampled_parent(s) #THIS BAD, we have two functions calling each other (potentially)
             if energy:
                 w_parent = np.abs(w_parent)**2
         w_child = self.get_subband(s)   
@@ -141,6 +143,13 @@ class WS(object):
         """Takes the modulus across all of the subands, and returns a new WS object
         """
         return WS(np.abs(self.ary_lowpass)**2,tuple([np.abs(ary_coeffs)**2 for ary_coeffs in self.tup_coeffs]))
+
+    def cast(self,str_dtype):
+        '''Returns a copy of this object with all values cast to dtype
+        '''
+        return WS(np.array(self.ary_lowpass,dtype=str_dtype),
+                  tuple([np.array(ary_coeffs,dtype=str_dtype) 
+                         for ary_coeffs in self.tup_coeffs]))
         
     def __add__(self,summand):
         if summand.__class__.__name__=='WS':
@@ -151,9 +160,7 @@ class WS(object):
     def nonzero(self):
         '''returns a WS object with True in all of the non-zero positions
         '''
-        return WS(np.array(self.ary_lowpass,dtype=bool),
-                  tuple([np.array(ary_coeffs,dtype=bool) 
-                         for ary_coeffs in self.tup_coeffs]))
+        return self.cast('bool')
     
     def __mul__(self,multiplicand):
         if multiplicand.__class__.__name__=='WS':
@@ -233,7 +240,7 @@ class WS(object):
         int_if_wav = int_wav_cplx * lgc_real + 1
         int_len_ws_vector = self.size*(int_if_wav)-(int_if_low==1)*(int_if_wav==2)*np.prod(self.ary_lowpass.size)
         ws_vector_dtype='complex64'
-        if lgc_real or not (int_wav_cplx and int_wav_cplx):
+        if lgc_real or not (int_low_cplx or int_wav_cplx):
             ws_vector_dtype='float32'
         if self.ws_vector == None or int_len_ws_vector!=self.ws_vector.size:
             self.ws_vector = np.zeros(int_len_ws_vector,dtype=ws_vector_dtype)

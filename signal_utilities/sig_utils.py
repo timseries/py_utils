@@ -329,7 +329,7 @@ def flatten_list(ls_ary):
     temp_ary=ls_ary[0].flatten()
     ary_size=temp_ary.size
     vec_ix=0
-    output_ary=np.zeros(ary_size*len(ls_ary))
+    output_ary=np.zeros(ary_size*len(ls_ary),dtype=temp_ary.dtype)
     for ary_unflat in ls_ary:
         output_ary[vec_ix:vec_ix+ary_size]=ary_unflat.flatten()
         vec_ix+=ary_size
@@ -374,7 +374,7 @@ def inv_block_diag(csr_bdiag, dict_in=None):
         dict_bdiag={}
         dict_in['dict_bdiag']=dict_bdiag
         csr_rows=np.nonzero(csr_bdiag)
-        csr_cols=csr_rows[1]
+        csr_cols=csr_rows[1]#this is not a mistake, just saving memory
         csr_rows=csr_rows[0]
         #sort by the row number
         sorted_temp=sorted(zip(csr_rows,csr_cols))
