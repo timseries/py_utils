@@ -46,11 +46,11 @@ class OutputImage(Metric):
                            for i in xrange(value.ndim)]
             if dict_in.has_key('x'):
                 im_range_key='x'
-            else: #no ground truth
+            else: #no ground truth, default to observation for input range
                 im_range_key='y'
             self.input_range = np.asarray([np.min(dict_in[im_range_key]),
                                            np.max(dict_in[im_range_key])])
-            super(OutputImage,self).update(value[self.slices])
+        super(OutputImage,self).update(value[self.slices])
 
     def plot(self):
         if self.data[-1].ndim==2:

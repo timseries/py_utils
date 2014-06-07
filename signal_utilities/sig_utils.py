@@ -337,8 +337,7 @@ def flatten_list(ls_ary):
 
 def flatten_list_to_csr(ls_ary):
     '''Flatten a list of objects which have the flatten() method to a 
-    csr object.
-    Assumes each element is the same size
+    csr object. Assumes each list element is the same size
     '''
     ary_flattened=flatten_list(ls_ary)
     ary_flattened_sz=ary_flattened.size
@@ -349,7 +348,8 @@ def flatten_list_to_csr(ls_ary):
 
 def unflatten_list(ary_input,num_partitions):
     '''Split ary_input into num_partitions equal-sized arrays and store 
-    these in a list
+    these in a list. Undoes flatten_list if the input to flatten_list is a list of
+    equal-sized arrays.
     '''
     int_part_size=ary_input.size/num_partitions
     ls_ary=[]
@@ -373,14 +373,29 @@ def inv_block_diag(csr_bdiag, dict_in=None):
     else:
         dict_bdiag={}
         dict_in['dict_bdiag']=dict_bdiag
+    
         csr_rows=np.nonzero(csr_bdiag)
         csr_cols=csr_rows[1]#this is not a mistake, just saving memory
         csr_rows=csr_rows[0]
-        #sort by the row number
-        sorted_temp=sorted(zip(csr_rows,csr_cols))
-        csr_rows=np.array([sorted_temp_pt[0] for sorted_temp_pt in sorted_temp],dtype='uint32')
-        csr_cols=np.array([sorted_temp_pt[1] for sorted_temp_pt in sorted_temp],dtype='uint32')
-        #create the parameter dict
+        if dict_in.has_key('col_offset'):
+            #it is assumed there that the column offset between entries in a given row
+            #is always some multiple called col_offset
+            col_offset=dict_in['col_offset']
+            csr_clusters=csr_rows.copy()
+            while np.max(csr_clusters)>=col_offset:
+                csr_clusters[csr_clusters>=col_offset]-=col_offset
+        else:
+            #no clustering information (the column offset or otherewise) 
+            #has been provided, so default to sorting by row order
+            csr_clusters=np.zeros(csr_rows.size,dtype='uint8')
+        #sort by the 'cluster' number
+        #create a new variable sorted_temp for clustering together the coordinates 
+        sorted_temp=sorted(zip(csr_clusters,csr_rows,csr_cols))
+        csr_clusters=np.array([sorted_temp_pt[0] for sorted_temp_pt in sorted_temp],dtype='uint32')
+        csr_rows=np.array([sorted_temp_pt[1] for sorted_temp_pt in sorted_temp],dtype='uint32')
+        csr_cols=np.array([sorted_temp_pt[2] for sorted_temp_pt in sorted_temp],dtype='uint32')
+        del sorted_temp
+        #store the structure of this matrix
         dict_bdiag['int_max_block_sz']=mode(csr_rows)[1]
         dict_bdiag['csr_rows']=csr_rows
         dict_bdiag['csr_cols']=csr_cols
@@ -394,15 +409,17 @@ def inv_block_diag(csr_bdiag, dict_in=None):
         #store index arrays for each block size
         for block_sz in dict_bdiag['block_sizes']:
             int_std=block_sz**2
+            #blk_ix are indices within the block size mask which show the locations of elements corresponding to 
+            #a given block size
             blk_ix=np.nonzero(block_sz_mask==block_sz)[0]#all of the block indices for csr_rows/cols
             #need to permute these block indices so that
             #the diagonal components to be in the correct locations
-            #and we assume arrangement of off diagonal elements doesn't matter
+            #and we assume arrangement of off-diagonal elements doesn't matter
             #because they are all the same. without any additional info about csr_bdiag
             #this is the best we can do
-            new_blk_ix=zip(csr_rows[blk_ix],csr_cols[blk_ix],blk_ix)
-            new_blk_ix=sorted(new_blk_ix,key=lambda x:(x[0],not(x[0]==x[1]),x[1]))
-            new_blk_ix=np.array([new_blk_ix_pt[2] for new_blk_ix_pt in new_blk_ix],dtype='uint32')
+            new_blk_ix=zip(csr_clusters[blk_ix],csr_rows[blk_ix],csr_cols[blk_ix],blk_ix)
+            new_blk_ix=sorted(new_blk_ix,key=lambda x:(x[0],x[1],not(x[1]==x[2]),x[2]))
+            new_blk_ix=np.array([new_blk_ix_pt[3] for new_blk_ix_pt in new_blk_ix],dtype='uint32')
             #now new_blk_ix has the diagonal elements in every block_sz position within each block
             #this is not correct, so we'll correct this in the following loop
             #at least now we have an efficient way to index the diagonal components in each block
@@ -421,7 +438,7 @@ def inv_block_diag(csr_bdiag, dict_in=None):
             dict_bdiag[str(block_sz)+'rows']=csr_rows[blk_ix]
             dict_bdiag[str(block_sz)+'cols']=csr_cols[blk_ix]
             dict_bdiag[block_sz]=blk_ix
-    #now we can do the actual inverting, storing in a new vector
+    #now we can do the actual inverting, storing in a new vector new_csr_data
     new_csr_data=np.zeros(csr_rows.size,)
     for block_sz in dict_bdiag['block_sizes']:
         int_std=block_sz**2 #stride to extract the blocks, when necessary

@@ -25,6 +25,7 @@ class WS(object):
         self.ary_shape = tuple(2*np.array(tup_coeffs[0][(Ellipsis,0)].shape))
         self.int_levels = len(tup_coeffs)
         self.int_dimension = ary_lowpass.ndim
+        self.ndim = ary_lowpass.ndim
         self.ds_slices = downsample_slices(self.int_dimension)
         self.int_orientations = tup_coeffs[0].shape[-1]
         self.int_subbands = self.int_levels * self.int_orientations + 1
