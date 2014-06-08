@@ -107,7 +107,7 @@ class Input(Section):
         elif str_extension == 'jpg' or str_extension == 'png':
             file_data = misc.imread(filepath)
         elif str_extension == 'pkl':
-            filehandler = open(filepath, 'r') 
+            filehandler = open(filepath, 'rb') 
             file_data = cPickle.load(filehandler)
             filehandler.close()
         elif str_extension == 'json':

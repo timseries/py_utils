@@ -373,7 +373,6 @@ def inv_block_diag(csr_bdiag, dict_in=None):
     else:
         dict_bdiag={}
         dict_in['dict_bdiag']=dict_bdiag
-    
         csr_rows=np.nonzero(csr_bdiag)
         csr_cols=csr_rows[1]#this is not a mistake, just saving memory
         csr_rows=csr_rows[0]
@@ -411,7 +410,7 @@ def inv_block_diag(csr_bdiag, dict_in=None):
             int_std=block_sz**2
             #blk_ix are indices within the block size mask which show the locations of elements corresponding to 
             #a given block size
-            blk_ix=np.nonzero(block_sz_mask==block_sz)[0]#all of the block indices for csr_rows/cols
+            blk_ix=np.array(np.nonzero(block_sz_mask==block_sz)[0],dtype='uint32')#all of the block indices for csr_rows/cols
             #need to permute these block indices so that
             #the diagonal components to be in the correct locations
             #and we assume arrangement of off-diagonal elements doesn't matter
