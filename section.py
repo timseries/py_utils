@@ -33,6 +33,11 @@ class Section(object):
     def get_params(self):
         return self.ps_parameters
 
+    def get_params_fname(self,ext=True):
+        if ext==False:
+            return self.ps_parameters.str_fname.split('.')[1]
+        return self.ps_parameters.str_fname
+
     def get_subsections(self,str_key):
         """
         Returns section objects specified from a sections str_key field
@@ -89,7 +94,7 @@ class Section(object):
                 #do some parsing for special strings, such as  
                 if ',' in val: #comma-delimited lists or
                     val=val.split(',')
-                if '~' in val: #paths or
+                elif '~' in val: #paths or ...
                     val=expanduser(val)    
         return val
 

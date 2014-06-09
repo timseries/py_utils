@@ -2,6 +2,7 @@
 import ConfigParser
 import csv
 import os
+import os.path
 from os.path import exists, dirname, expanduser
 
 class ParameterStruct(object):
@@ -15,11 +16,15 @@ class ParameterStruct(object):
         """       
         self.config = ConfigParser.ConfigParser(allow_no_value=True)
         str_file_path = expanduser(str_file_path)
+        if not exists(str_file_path):
+            raise Exception("file " + str_file_path + " nonexistent")    
         self.config.read(str_file_path)
         if self.config.sections() == []:
-            raise Exception("file " + str_file_path + " empty or non-existent")    
+            raise Exception("file " + str_file_path + " invalid config")    
         self.str_file_path = str_file_path
-        self.str_file_dir = os.path.dirname(os.path.realpath(str_file_path))
+        pathsplit=os.path.split(str_file_path)
+        self.str_file_dir = pathsplit[0]
+        self.str_fname = pathsplit[1]
         self.section_names = self.config._sections.keys()
         
     def write(self,str_file_path=None):

@@ -104,7 +104,7 @@ class Input(Section):
                 for index,image in enumerate(volume):
                     file_data[:,:,index] = image
             input_file.close()
-        elif str_extension == 'jpg' or str_extension == 'png':
+        elif str_extension in ('bmp','jpg','png'):
             file_data = misc.imread(filepath)
         elif str_extension == 'pkl':
             filehandler = open(filepath, 'rb') 
