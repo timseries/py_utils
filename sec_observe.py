@@ -61,7 +61,10 @@ class Observe(Section):
             noise_pars['interval'] = self.get_val('noiseinterval',True)#uniform
             noise_pars['size'] = dict_in['x'].shape
             dict_in['noisevariance'] = noise_pars['variance']
-            dict_in['n'] = noise_gen(noise_pars)
+            if dict_in['noisevariance']>0:
+                dict_in['n'] = noise_gen(noise_pars)
+            else:
+                dict_in['n'] = 0
         elif self.str_type=='classification':
             #partition the classification dataset into an 'observed' training set
             #and an unobserved evaluation/test set, and generate features
@@ -110,41 +113,33 @@ class Observe(Section):
                 self.compute_bsnr(dict_in,noise_pars)
         elif (self.str_type == 'convolution_downsample'):
                 Phi = self.Phi
+                #this order is important in the config file
                 D = Phi.ls_ops[1]
                 H = Phi.ls_ops[0]
                 H.set_output_fourier(False)
-                dict_in['Hx'] = Phi * dict_in['x']
-                dict_in['y_us'] = H * dict_in['x'] + dict_in['n']
-                dict_in['y_D'] = np.zeros(dict_in['y_us'][0::1,1::2].shape)
+                dict_in['Phix'] = Phi * dict_in['x']
+                dict_in['Hx'] = dict_in['Phix']
+                #the version of y without downsampling
+                dict_in['Hxpn'] = H * dict_in['x'] + dict_in['n']
+                dict_in['DHxpn'] = np.zeros((D*dict_in['Hxpn']).shape)
                 dict_in['n'] = D * dict_in['n']
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
                 DH = fftn(Phi*nd_impulse(dict_in['x'].shape))
                 DHt = conj(DH)
-                # plt.imshow(np.abs(DH),cmap='gray')
-                # plt.show()
                 Hty=fftn(D*(~Phi * dict_in['y']))
-                # Hty=DHt*fftn(dict_in['y'])
-                # plt.imshow(np.abs(fftn(DH)),cmap='gray')
-                # plt.show()
                 HtDtDH=np.real(DHt*DH)
-                # plt.imshow(np.abs(HtDtDH),cmap='gray')
-                # plt.show()
                 dict_in['x_0'] = ~D*real(ifftn(Hty /
                                                (HtDtDH + 
                                                 wrf * noise_pars['variance'])))
                 #interpolation
-                grid_x,grid_y = np.mgrid[0:(dict_in['x_0'].shape[0]),0:(dict_in['x_0'].shape[1])]
-                points = np.mgrid[0:(dict_in['x_0'].shape[0]),0:(dict_in['x_0'].shape[1]):2]
-                pointsx= points[0,...].flatten()
-                pointsy= points[1,...].flatten()
-                points = np.vstack([pointsx,pointsy]).transpose()
-                values = dict_in['x_0'][pointsx,pointsy]
-                grid_z = griddata(points,values,(grid_x,grid_y),method='cubic',fill_value=0.0)
-                # dict_in['x_0'][0::1,1::2]=grid_z
-                # dict_in['x_0'][0::1,1::2]=grid_z[0::1,1::2]
-                # plt.imshow(~D*dict_in['y'],cmap='gray')
-                # plt.imshow(dict_in['x_0'],cmap='gray')
-                # plt.show()
+                xdim=dict_in['x'].ndim
+                xshp=dict_in['x'].shape
+                grid=np.mgrid[[slice(0,xshp[j]) for j in xrange(xdim)]]
+                points = np.mgrid[[slice(0,xshp[j],D.ds_factor[j]) for j in xrange(xdim)]]
+                values = dict_in['x_0'][[point.flatten() for point in points]]
+                points = np.vstack([point for point in points]).transpose()
+                interp_vals = griddata(points,values,grid,method='cubic',fill_value=0.0)
+                dict_in['x_0']=interp_vals
                 self.compute_bsnr(dict_in,noise_pars)
                 
         elif self.str_type == 'convolution_poisson':

@@ -71,7 +71,13 @@ class OutputImage(Metric):
             files_enumerated = enumerate(os.walk(os.path.dirname(strPath)))
             base_name=os.path.basename(strPath)
             files,dir_info=files_enumerated.next()
-            ix_offset=len([file_name for file_name in dir_info[2] if base_name in file_name])
+            if self.save_often:
+                #figure out where the last save was, since we're only keeping
+                #one iterate in memory at once
+                ix_offset=len([file_name for file_name in dir_info[2] if base_name in file_name])
+            else:    
+                #we're keeping all iterates in memory, so start at 0
+                ix_offset=0
         for ix,frame in frame_iterator:
             strSavePath = strPath + str(ix_offset+ix) + '.' + self.output_extension
             write_data = frame[self.slices]

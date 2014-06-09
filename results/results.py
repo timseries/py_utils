@@ -16,6 +16,8 @@ import time
 import datetime
 import csv 
 
+import pdb
+
 class Results(Section):
     """
     Class for defining a collection of metrics to update. Contains methods to 
@@ -48,16 +50,22 @@ class Results(Section):
         self.overwrite_results = self.get_val('overwriteresults',True)
         self.zeros = self.get_val('zeros', True, DEFAULT_ZEROS)
         self.display_enabled = True
+        self.monitors=0
         
         #get screen info
         if self.display_enabled:
+            #try to find a display
             screen = os.popen("xrandr -q -d :0").readlines()
             if len(screen)>0:
+                #assume either single or dual monitor setup
+                self.monitors = 1 + (sum(['connected' in screen[j] for j in xrange(len(screen))])>1)
                 screen=screen[0]
-                self.screen_size =  aa([int(screen.split()[7]), \
+                self.screen_size =  aa([int(screen.split()[7])/self.monitors, \
                                     int(screen.split()[9][:-1])], dtype = np.int)
+                                    
                 self.arrange_metric_windows() #figure out the coordinates
             else: #turn display off    
+                self.monitors=0
                 self.display_enabled = False
         #create a folder in the output directory with the current minute's time stamp
         if self.output_directory=='':
@@ -135,13 +143,13 @@ class Results(Section):
         """       
         figures=[manager.canvas.figure \
                  for manager in matplotlib._pylab_helpers.Gcf.get_all_fig_managers()]
-        int_fig_offset = len(figures) - 1
+        int_fig_offset = max(0,len(figures) - 1)
         for metric in self.ls_metrics:
             #make row offset adjustment
             metric.figure_location += self.grid_size[0] * self.row_offset
             metric.w_size = self.screen_size / self.grid_size
-            int_row_offset = int((metric.figure_location - .1) / self.grid_size[0])
-            int_col_offset = int(mod(metric.figure_location, self.grid_size[0] + 1))
+            int_row_offset = int((metric.figure_location + .1) / self.grid_size[0])
+            int_col_offset = int(mod(metric.figure_location, self.grid_size[0]))
             metric.w_coords = aa([int_col_offset * metric.w_size[0] + \
                                   self.desktop * self.screen_size[0], \
                                   int_row_offset * metric.w_size[1]])
@@ -153,6 +161,7 @@ class Results(Section):
                                   str(metric.w_size[1]) + "+" + \
                                   str(metric.w_coords[0]) + "+" + \
                                   str(metric.w_coords[1]))
+        # pdb.set_trace()
 
     def clear(self):
         """

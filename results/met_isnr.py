@@ -30,6 +30,9 @@ class ISNR(Metric):
     def update(self,dict_in):
         if self.data == []:
             if self.transform != None:
+                #this transform is useful if you want to compute the isnr
+                #on, say, a masked version of the image, where the transform
+                #is a mask operator
                 self.x = (self.transform * dict_in['x']).flatten()
             else:
                 if dict_in[self.y_key].shape != dict_in['x'].shape:
