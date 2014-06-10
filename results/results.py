@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import Tkinter
 import os
 import time
+import re
 import datetime
 import csv 
 
@@ -58,10 +59,11 @@ class Results(Section):
             #try to find a display
             screen = os.popen("xrandr -q -d :0").readlines()
             if len(screen)>0:
-                ls_temp_res=re.findall(' connected [0-9]*x[0-9]*', ''.join(screen))
+                ls_res=re.findall(' connected [0-9]*x[0-9]*', ''.join(screen))
+                ls_res=re.findall('[0-9]*x[0-9]*', ''.join(ls_res))
                 #the ordering of these assumes the screens are in the same order
                 #if this is not the case, simply rearrange your screens ;-)
-                self.resolutions=tuple([np.array(res.split('x'),'uint16') for res in ls_temp_res])
+                self.resolutions=tuple([np.array(res.split('x'),'uint16') for res in ls_res])
                 self.monitor_count = len(self.resolutions)
                 self.desktop=np.mod(self.desktop,self.monitor_count)
                 self.arrange_metric_windows() #figure out the coordinates

@@ -29,7 +29,8 @@ class Input(Section):
         #relative paths do not begin with a '/' by convention
         if (self.filedir == '' or 
             self.filedir[0] != '/'): #relative to config file, or no dir specified
-            self.filepath = self.ps_parameters.str_file_dir + self.filedir + '/' + self.filename
+            self.filepath = (self.ps_parameters.str_file_dir + '/' + 
+                             self.filedir + '/' + self.filename)
         else:
             self.filepath = self.filedir + '/' + self.filename
           
@@ -92,7 +93,7 @@ class Input(Section):
 
     def read_single_file(self,filepath):
         if not os.path.isfile(filepath):
-            return None
+            raise Exception('no such file ' + filepath)
         str_extension = filepath.split('.')[-1]
         if str_extension == 'tif':#2d image or 3d stack of images
             input_file = tif.open(self.filepath, mode='r')
