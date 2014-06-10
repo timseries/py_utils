@@ -514,14 +514,17 @@ def inv_block_diag(csr_bdiag, dict_in=None):
             minor_mtx[13::int_std]=b42
             minor_mtx[14::int_std]=b43
             minor_mtx[15::int_std]=b44
-            ary_blk_v=minor_mtx / np.repeat(  a11*a22*a33*a44+a11*a23*a34*a42+a11*a24*a32*a43
-                                             +a12*a21*a34*a43+a12*a23*a31*a44+a12*a24*a33*a41
-                                             +a13*a21*a32*a44+a13*a22*a34*a41+a13*a24*a31*a42
-                                             +a14*a21*a33*a42+a14*a22*a31*a43+a14*a23*a32*a41
-                                             -a11*a22*a34*a43-a11*a23*a32*a44-a11*a24*a33*a42
-                                             -a12*a21*a33*a44-a12*a23*a34*a41-a12*a24*a31*a43
-                                             -a13*a21*a34*a42-a13*a22*a31*a44-a13*a24*a32*a41
-                                             -a14*a21*a32*a43-a14*a22*a33*a41-a14*a23*a31*a42,int_std)
+            detA=( a11*a22*a33*a44+a11*a23*a34*a42+a11*a24*a32*a43
+                  +a12*a21*a34*a43+a12*a23*a31*a44+a12*a24*a33*a41
+                  +a13*a21*a32*a44+a13*a22*a34*a41+a13*a24*a31*a42
+                  +a14*a21*a33*a42+a14*a22*a31*a43+a14*a23*a32*a41
+                  -a11*a22*a34*a43-a11*a23*a32*a44-a11*a24*a33*a42
+                  -a12*a21*a33*a44-a12*a23*a34*a41-a12*a24*a31*a43
+                  -a13*a21*a34*a42-a13*a22*a31*a44-a13*a24*a32*a41
+                  -a14*a21*a32*a43-a14*a22*a33*a41-a14*a23*a31*a42)
+            # if not np.all(detA!=0):
+            #     pdb.set_trace()
+            ary_blk_v=minor_mtx / np.repeat(detA,int_std)
             del minor_mtx
         elif block_sz==5:
             minor_mtx=np.zeros(ary_blk_vsz,)
