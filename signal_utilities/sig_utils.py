@@ -418,15 +418,17 @@ def inv_block_diag(csr_bdiag, dict_in=None):
             new_blk_ix=zip(csr_clusters[blk_ix],csr_rows[blk_ix],csr_cols[blk_ix],blk_ix)
             new_blk_ix=sorted(new_blk_ix,key=lambda x:(x[0],x[1],not(x[1]==x[2]),x[2]))
             new_blk_ix=np.array([new_blk_ix_pt[3] for new_blk_ix_pt in new_blk_ix],dtype='uint32')
-            #now new_blk_ix has the diagonal elements in every block_sz position within each block
-            #this is not correct, so we'll correct this in the following loop
+            #now new_blk_ix has the diagonal elements in the first column of each row
+            #this is not correct for fast inversion, so we'll correct this in the following loop
             #at least now we have an efficient way to index the diagonal components in each block
             #the following offsets are with respect to the new_blk_indexing
             all_blk_offsets=set(np.arange(int_std))
             diag_new_blk_offsets=set(np.arange(0,int_std,block_sz))
             diag_blk_offsets=set(np.arange(0,int_std,block_sz+1))
-            off_diag_new_blk_offsets=sorted(all_blk_offsets.difference(diag_new_blk_offsets))
+            off_diag_new_blk_offsets=sorted(all_blk_offsets.difference(diag_new_blk_offsets)) #sets don't preserve asc. order
             off_diag_blk_offsets=sorted(all_blk_offsets.difference(diag_blk_offsets))
+            diag_new_blk_offsets=sorted(diag_new_blk_offsets)
+            diag_blk_offsets=sorted(diag_blk_offsets)
             #assign the each of diagonal components to the correct locations in blk_ix
             for blk_offset,new_blk_offset in zip(diag_blk_offsets,diag_new_blk_offsets):
                 blk_ix[blk_offset::int_std]=new_blk_ix[new_blk_offset::int_std]
