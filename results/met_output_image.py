@@ -9,8 +9,6 @@ import os
 from py_utils.results.metric import Metric
 from py_utils.results.defaults import DEFAULT_SLICE,DEFAULT_IMAGE_EXT
 
-import pdb
-
 class OutputImage(Metric):
     """
     Class for outputting and image or volume, and allowing a redraw/update.
