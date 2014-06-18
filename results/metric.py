@@ -26,7 +26,8 @@ class Metric(Section):
         self.ylabel = self.get_val('ylabel',False)
         self.key = self.get_val('key',False,DEFAULT_KEY)
         self.title = self.get_val('title',False)
-        self.print_values = self.get_val('print',True)
+        self.print_enabled = self.get_val('print',True)
+        self.plot_enabled = self.get_val('plot',True, True)
         self.output_format = self.get_val('outputformat',False,'csv')
         #2 element vector, beginning and end to crop for plotting
         self.crop_plot = maximum(zeros(2),self.get_val('cropplot',True)) 
@@ -35,21 +36,21 @@ class Metric(Section):
         self.save_often = self.get_val('saveoften',True,False)
 
     def plot(self):
-        plt.figure(self.figure_number)
+        if self.plot_enabled:
+            plt.figure(self.figure_number)
+            slice_start = self.crop_plot[0]
+            slice_end = self.crop_plot[1]
+            if slice_end==0:
+                slice_end = None
+            sl=slice(slice_start,slice_end)
+            plt.plot(array(self.data)[sl])
         
-        slice_start = self.crop_plot[0]
-        slice_end = self.crop_plot[1]
-        if slice_end==0:
-            slice_end = None
-        sl=slice(slice_start,slice_end)
-        plt.plot(array(self.data)[sl])
-
     def update(self, value=None):
         if value != None and self.update_enabled:
             self.data.append(value)
             if self.update_once:
                 self.update_enabled=False    
-        if self.print_values:
+        if self.print_enabled:
             print self.get_val('key',False) + ':\t' + str(self.data[-1])  
 
     def save(self,strPath='/home/'):

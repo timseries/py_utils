@@ -80,8 +80,8 @@ class Scat(object):
                                 for pathlen in xrange(min_path_len,max_path_len+1)]
         #initialize the montage dictionary
         montage_dict={}
-        montage_dict['thumbnail_height']=nodes_list[0].get_data().shape(0)
-        montage_dict['thumbnail_width']=nodes_list[0].get_data().shape(1)
+        montage_dict['thumbnail_height']=nodes_list[0].get_data().shape[0]
+        montage_dict['thumbnail_width']=nodes_list[0].get_data().shape[1]
         montage_dict['thumbnail_columns']=self.int_orientations**(self.depth-1)
         montage_dict['thumbnail_rows']=self.depth*self.max_transform_levels
         montage_dict['ls_images']=[]

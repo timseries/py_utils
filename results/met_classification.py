@@ -1,12 +1,16 @@
 #!/usr/bin/python -tt
 import numpy as np
 import sklearn.metrics as sm
+import matplotlib.pyplot as plt
 
 from py_utils.results.metric import Metric
 
+import pdb
+
 class ClassificationMetric(Metric):
     """
-    Base class for defining a metric
+    This class serves as an interface between scikitlearns metrics
+    and the Metric class.
     """
     
     def __init__(self,ps_params,str_section):
@@ -33,12 +37,36 @@ class ClassificationMetric(Metric):
             self.met_fun = sm.recall_score
         elif self.metric_type=='zeroone':
             self.met_fun = sm.zero_one_loss
+        elif self.metric_type=='confusionmatrix':
+            self.met_fun = sm.confusion_matrix
         else:
             raise ValueError('unsupported classification metric ' + self.metric_type)    
-
+        
+    def plot(self):
+        if self.metric_type!='confusionmatrix':
+            super(ClassificationMetric,self).plot()
+        else: 
+            plt.figure(self.figure_number)   
+            plt.matshow(self.data[-1])
+            plt.title('Confusion matrix')
+            plt.colorbar()
+            plt.ylabel('True label')
+            plt.xlabel('Predicted label')
+            num_classes=len(self.class_labels)
+            if num_classes>0:
+                plt.xticks(np.arange(len(self.class_labels)),self.class_labels)
+                plt.yticks(np.arange(len(self.class_labels)),self.class_labels)
+                for ix in xrange(num_classes):
+                    for iy in xrange(num_classes):
+                        plt.annotate(self.data[-1][ix][iy],(iy,ix))
+            
     def update(self,dict_in):
         #replicate this metric for the number of testing instances
         self.data.append(self.met_fun(dict_in['y_truth'],dict_in['y_pred']))
+        if dict_in.has_key('class_labels'):
+            self.class_labels=dict_in['class_labels']
+        else:
+            self.class_labels=[]
         super(ClassificationMetric,self).update()
         
     class Factory:

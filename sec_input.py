@@ -40,7 +40,7 @@ class Input(Section):
         """
         #for the classifcation inputs, dict_in['x'] should have this structure
         #dict_in['x']={'class1':[exemplar1,exemplar2,...],'class2':[exemplar1,exemplar2,...]}
-        #where exemplar is a two list ['entryid',data], data is an nparray
+        #where exemplar is a two-element list ['entryid',data], data is an ndarray
         if self.filename=='class_directories':
             #using the directory structure to build a dictionary of lists, each
             #dictionary entry corresponding to a different class, with the 
@@ -62,10 +62,10 @@ class Input(Section):
             #now, use the ordereddict to give the dict in dict_in['x'] a key-sorted order
             dict_in['x'] = OrderedDict(sorted(dict_in['x'].items(), key=lambda t: t[0]))
         elif self.filename[:9]=='class_csv':
-            #use a csv file to build the dictionary of list, 
-            #each entry corresponding to a different class, with the
-            #class exemplars being elements of the lists    
-            #useful for challenges, when you don't know the test labels
+            #use a csv file to build the dictionary (lists of 2-element tuples), 
+            #Each 2-element tuple : (id, data)
+            #assumes each row in the csv file has the form 
+            # id, class
             dict_in['x'] = {}
             with open(self.filedir+'/'+self.filename, 'rb') as csvfile:
                 csvreader = csv.reader(csvfile)
