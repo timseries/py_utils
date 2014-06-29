@@ -1,7 +1,7 @@
 #!/usr/bin/python -tt
 from operator import add
 import numpy as np
-from numpy import max as nmax, absolute, conj, arange, zeros, array, median, pad
+from numpy import max as nmax, absolute, conj, arange, zeros, array, median, pad, pi
 from numpy.fft import fftn, ifftn
 from numpy.linalg import norm, inv
 from numpy.random import normal, rand, seed, poisson
@@ -788,3 +788,50 @@ def mad(data, axis=None):
 
 def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.299, 0.587, 0.144])
+
+def phase_unwrap(phase, dict_global_lims, ls_local_lims):
+    """ Unwrap phases by shifting the phases to a new '0' globally and locally.
+
+    Args:
+        phase (ndarray): Phases to unwrap, in radians.
+        dict_global_lims (dict): Dict with fields:
+            'lowerlimit' (float): The lower limit of phases.
+            'upperlimit' (float): The upper limit of phases.
+            'boundary_mask' (boolean, optional): An optional mask for corrections after
+                                                 global and local adjustment.
+            'boundary_upperlimit' (float, optional): Upper phase limit of boundary-masked region.
+                                                 
+        ls_local_lims: A list of Sections which have bounding boxes and limits:
+            'lowerlimit' (float): The lower limit of phases.
+            'upperlimit' (float): The upper limit of phases.
+            'upperleft' (list): The [x,y] ([column,row]) of the upper left hand
+                corner of the bounding box.
+            'lowerright' (list): The [x,y] ([column,row]) of the lower right hand
+                corner of the bounding box.
+                
+    """
+    phase[phase<dict_global_lims['lowerlimit']] += 2*pi     #global phase corrections
+    #not enforcing the upper limit just yet
+    local_mask = np.zeros(phase.size,dtype='bool') #aggregation of where the local corrections take place
+    for local_lims in ls_local_lims:
+        lowerlimit=local_lims.get_value('lowerlimit')
+        upperlimit=local_lims.get_value('upperlimit')
+        upperleft=local_lims.get_value('upperleft')
+        lowerright=local_lims.get_value('lowerright')
+        phase_region = phase[upperleft[1]:lowerright[1],upperleft[0]:lowerright[0]]
+        phase_region[phase_region<lowerlimit]+=2*pi
+        phase_region[phase_region<upperlimit]-=2*pi
+        phase[upperleft[1]:lowerright[1],upperleft[0]:lowerright[0]] = phase_region
+        #aggregate the mask of local limits bounding boxes
+        local_lims_mask=np.zeros(phase.size,dtype='bool')
+        local_lims_mask[upperleft[1]:lowerright[1],upperleft[0]:lowerright[0]]=True
+        local_mask+=local_lims_mask
+
+    #apply the optional boundary phase correction to all boundaries, except where the local
+    #corrections have already taken place
+    if (dict_global_lims.has_key('boundary_mask') and 
+        dict_global_lims.has_key('boundary_upperlimit')):
+        phase[~local_mask*dict_global_lims['boundary_mask'] * 
+              (phase > dict_global_lims['boundary_upperlimit'])] -= 2*pi
+        
+    return phase

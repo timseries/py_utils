@@ -6,17 +6,29 @@ from os.path import expanduser
 from py_utils import parameter_struct
 
 class Section(object):
-    """
-    Base class for defining other classes which inherit properties from a config.
+    """Base class which inherit parameters from a (*.ini configuration based parameterization).
+
+    Attributes:
+        ps_parameters (ParameterStruct): The contains (at least) the parameterization
+            for this instance.
+        str_section (str): The section within the ps_parameters which defines the
+            parameterization for this instance.
+        str_object_name (str): The class of the object which this instance parameterizes.
+        disct_section (dict): The dict corresponding to this instance.
+
     """
     
     def __init__(self,ps_parameters,str_section):
-        """
-        Class constructor for Section.
+        """Class constructor for Section.
+
+        Args
+            ps_parameters (ParameterStruct): See ps_parameters attribute.
+            str_section (str): See str_section attribute.
+        
         """       
+        
         self.ps_parameters = ps_parameters
         self.str_section = str_section
-        
         self.str_object_name = ps_parameters.get_section_dict(str_section)['name']
         str_class_name = self.__class__.__name__
         if self.str_object_name!=str_class_name and str_class_name!='Section':
@@ -45,7 +57,7 @@ class Section(object):
         ls_subsections = self.get_subsection_strings(str_key)
         return [Section(self.ps_parameters,str_section) for str_section in ls_subsections]
 
-    def get_val(self,str_key,lgc_val_numeric=False,default_value=0):
+    def get_val(self,str_key,lgc_val_numeric=False,default_value=0,rtn_list=False):
         """
         Returns the value corresponding to a key in this section, with defaults. 
 
@@ -96,6 +108,8 @@ class Section(object):
                     val=val.split(',')
                 elif '~' in val: #paths or ...
                     val=expanduser(val)    
+        if rtn_list and val.__class__.__name__ != 'list':
+            val=[val]            
         return val
 
     def get_keyword_arguments(self,kwprefix):
