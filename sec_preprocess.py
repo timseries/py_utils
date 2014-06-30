@@ -1,6 +1,6 @@
 #!/usr/bin/python -tt
 import numpy as np
-from numpy import max as nmax, conj, mean, angle, sqrt, exp
+from numpy import max as nmax, conj, mean, angle, sqrt, exp, abs as nabs
 from numpy.fft import fftn, ifftn, fftshift
 
 from py_utils.section import Section
@@ -10,11 +10,11 @@ from py_operators.operator_comp import OperatorComp
 
 import matplotlib.pyplot as plt
 
-class Prepare(Section):
-    """A configurable set of data preparation routines. 
+class Preprocess(Section):
+    """A configurable set of data preprocessing routines. 
 
     Attributes:
-        str_type (str): The type of preparation object this is.
+        str_type (str): The type of preprocessing object this is.
         mask_sec_in (str): The name of the mask input section parameters.
     
     """       
@@ -24,28 +24,29 @@ class Prepare(Section):
         
 
         """
-        super(Prepare,self).__init__(ps_params,str_section)
-        self.str_type = self.get_val('preparetype',False)
+        super(Preprocess,self).__init__(ps_params,str_section)
+        self.str_type = self.get_val('preprocesstype',False)
 
-    def prepare(self,dict_in):
+    def preprocess(self,dict_in):
         """Loads observation model parameters into a dictionary, 
         performs the forward model and provides an initial solution.
 
         Args:
         dict_in (dict): Dictionary which must include the following members:
             'x' (ndarray): The 'ground truth' input signal to be modified.
-            '' 
         """
-        #build the preparation parameters
+        #build the preprocessing parameters
         if (self.str_type == 'phasevelocity'):
             mask_sec_in = self.get_val('masksectioninput',False)
+            bmask_sec_in = self.get_val('boundarymasksectioninput',False)
             ls_vcorrect_sec_in = self.get_val('vcorrects',False,'',True)
             ls_vcorrect_secs = [sf.create_section(self.get_params(),vcorrect_sec_in)
                                 for vcorrect_sec_in in ls_vcorrect_sec_in] 
             #load the mask
-            if self.mask_sec_in:
+            if mask_sec_in:
                 sec_mask_in = sf.create_section(self.get_params(),mask_sec_in)
                 dict_in['mask'] = sec_mask_in.read(dict_in, True)
+            if bmask_sec_in:    
                 sec_bmask_in = sf.create_section(self.get_params(),bmask_sec_in)
                 dict_in['boundarymask'] = sec_bmask_in.read(dict_in, True)
             else:
@@ -72,13 +73,13 @@ class Prepare(Section):
                 new_x = (dict_in['x'][:,:,frame_order[0]] * 
                          conj(dict_in['x'][:,:,frame_order[1]]))
                 theta = angle(new_x)
-                magnitude = sqrt(abs(f));
+                magnitude = sqrt(abs(new_x));
                 
             elif diff_method == 'subtraction':
-                theta = (dict_in['x'][:,:,frame_order[0]] - 
-                         dict_in['x'][:,:,frame_order[2]])
-                magnitude = 0.5*(dict_in['x'][:,:,frame_order[1]]
-                                 + dict_in['x'][:,:,frame_order[2]])
+                theta = (angle(dict_in['x'][:,:,frame_order[0]]) - 
+                         angle(dict_in['x'][:,:,frame_order[1]]))
+                magnitude = 0.5*(np.abs(dict_in['x'][:,:,frame_order[0]])
+                                 + np.abs(dict_in['x'][:,:,frame_order[1]]))
                 new_x = magnitude*exp(1j*theta)
                 
             #Do phase unwrapping. This works almost everywhere, except
@@ -86,19 +87,20 @@ class Prepare(Section):
             #These areas must also be unwrapped with special limits
             #which are determined from the data.
             dict_global_lims = {}
-            dict_global_lims['lowerlimit'] = self.get_val('phaselowerlimit')
-            dict_global_lims['upperlimit'] = self.get_val('phaseupperlimit')
+            dict_global_lims['lowerlimit'] = self.get_val('phaselowerlimit',True)
+            dict_global_lims['upperlimit'] = self.get_val('phaseupperlimit',True)
             dict_global_lims['boundary_mask'] = dict_in['boundarymask']
-            dict_global_lims['boundary_upperlimit'] = self.get_val('boundaryphaseupperlimit');
+            dict_global_lims['boundary_upperlimit'] = self.get_val('boundaryphaseupperlimit',True);
             
             theta = phase_unwrap(theta, dict_global_lims, ls_vcorrect_secs)
-            magnitude /= np.max(magnitude)
-            new_x = magnitude*exp(1j*theta)
+            magnitude /= np.max(nabs(magnitude))
 
-            dict_in['x'] = new_x
+            dict_in['x'] = magnitude*exp(1j*theta)
+            dict_in['theta'] = theta
+            dict_in['magnitude'] = magnitude
             dict_in['dict_global_lims'] = dict_global_lims
             dict_in['ls_vcorrect_secs'] = ls_vcorrect_secs
             
     class Factory:
         def create(self,ps_params,str_section):
-            return Prepare(ps_params,str_section)
+            return Preprocess(ps_params,str_section)

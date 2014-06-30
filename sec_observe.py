@@ -1,6 +1,6 @@
 #!/usr/bin/python -tt
 import numpy as np
-from numpy import max as nmax, conj, mean, log10, real
+from numpy import max as nmax, conj, mean, log10, real, angle, abs as nabs
 from numpy.linalg import norm
 from numpy import asarray as ar
 from numpy.random import permutation
@@ -9,6 +9,7 @@ from scipy.interpolate import griddata
 import warnings
 
 from py_utils.section import Section
+import py_utils.signal_utilities.sig_utils as su
 from py_utils.signal_utilities.sig_utils import nd_impulse, circshift, colonvec, noise_gen, crop_center, pad_center
 from py_operators.operator_comp import OperatorComp
 
@@ -48,14 +49,17 @@ class Observe(Section):
         observation 'y', and initial estimate 'x_0'.
         """
         warnings.simplefilter("ignore",np.ComplexWarning)
-        #build the observation model parameters
-        if (self.str_type[:11] == 'convolution'):
-            wrf = nmax(self.get_val('wienerfactor',True),0.001)
+        #########################################
+        #fetch observation model parameters here#
+        #########################################
+
+        if (self.str_type[:11] == 'convolution' or 
+            self.str_type == 'compressed_sensing'):
+            wrf = self.get_val('wienerfactor',True)
             str_domain = self.get_val('domain',False)
             noise_pars = {} #build a dict to generate the noise
             noise_pars['seed'] = self.get_val('seed',True)
-            noise_pars['variance'] = self.get_val('noisevariance',
-                                                  True)
+            noise_pars['variance'] = self.get_val('noisevariance', True)
             noise_pars['distribution'] = self.get_val('noisedistribution',False)
             noise_pars['mean'] = self.get_val('noisemean',True)
             noise_pars['interval'] = self.get_val('noiseinterval',True)#uniform
@@ -93,12 +97,12 @@ class Observe(Section):
                 dict_in['x_train'][_class]=indices[:training_size]
                 dict_in['x_test'][_class]=indices[training_size:]
                 dict_in['y_label'][_class]=_class_index
-        elif self.str_type == 'compressedsensing':
-            raise Exception('cs observation not supported yet')    
         else:    
             raise ValueError('unsupported observation model')     
-        #compute the forward model and initial estimate
-        if (self.str_type == 'convolution'):
+        ################################################
+        #compute the forward model and initial estimate#
+        ################################################
+        if self.str_type == 'convolution':
                 H = self.Phi
                 H.set_output_fourier(False)
                 dict_in['Hx'] = H * dict_in['x']
@@ -111,7 +115,7 @@ class Observe(Section):
                 H.set_output_fourier(False)
             #compute bsnr    
                 self.compute_bsnr(dict_in,noise_pars)
-        elif (self.str_type == 'convolution_downsample'):
+        elif self.str_type == 'convolution_downsample':
                 Phi = self.Phi
                 #this order is important in the config file
                 D = Phi.ls_ops[1]
@@ -150,7 +154,7 @@ class Observe(Section):
                 H.set_output_fourier(False) #return spatial domain object
                 orig_shape = dict_in['x'].shape
                 Hspec = np.zeros(orig_shape)
-                dict_in['r'] = H * dict_in['x'] #Direct...
+                dict_in['r'] = H * dict_in['x']
                 k = dict_in['mp'] / nmax(dict_in['r'])
                 dict_in['r'] = k * dict_in['r']
                 #normalize the output image to have the same
@@ -169,11 +173,19 @@ class Observe(Section):
                                 ).astype('uint16').astype('int32')
             elif str_domain == 'evaluation': #are given the observation, which is stored in 'x'
                 dict_in['y'] = dict_in.pop('x')
-                #simple adjoint to find initial solution
             else:
                 raise Exception('domain not supported: ' + str_domain)
             dict_in['x_0'] = ((~H) * (dict_in['y'])).astype(dtype='float32')
             dict_in['y_padded'] = pad_center(dict_in['y'],dict_in['x_0'].shape)
+            
+        elif self.str_type == 'compressed_sensing':
+            Fu = self.Phi
+            dict_in['Fx'] = Fu * dict_in['x']
+            dict_in['y'] = dict_in['Fx'] + dict_in['n']
+            dict_in['x_0'] = (~Fu) * dict_in['y']
+            dict_in['theta_0'] = angle(dict_in['x_0'])
+            dict_in['theta_0'] = su.phase_unwrap(dict_in['theta_0'],dict_in['dict_global_lims'],dict_in['ls_vcorrect_secs'])
+            dict_in['magnitude_0'] = nabs(dict_in['x_0'])
 
     def compute_bsnr(self,dict_in,noise_pars):
         Hx = dict_in['Hx'].flatten()

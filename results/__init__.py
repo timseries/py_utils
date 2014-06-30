@@ -5,6 +5,7 @@ from met_nmise import NMISE
 from met_f_correl import FourierCorrelation
 from met_psnr import PSNR
 from met_rer import RER
+from met_l2e import L2E
 from met_output_image import OutputImage
 from met_output_montage import OutputMontage
 from met_output_object import OutputObject

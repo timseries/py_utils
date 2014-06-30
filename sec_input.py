@@ -111,6 +111,11 @@ class Input(Section):
             filehandler = open(filepath, 'rb') 
             file_data = cPickle.load(filehandler)
             filehandler.close()
+        elif str_extension == 'npz':
+            member = self.filemember
+            if not member:
+                member = 'arr_0'                
+            file_data = np.load(self.filepath)[member]
         elif str_extension == 'json':
             raise ValueError('json not coded yet')
         else:

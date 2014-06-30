@@ -29,7 +29,12 @@ def spectral_radius(op_transform, op_modality, tup_size, method='spectrum'):
     
     .. codeauthor:: Timothy Roberts <timothy.daniel.roberts@gmail.com>, 2013
     """
-    if method=='spectrum':
+    if method=='ones':
+        ary_impulse = nd_impulse(tup_size)
+        ws_w = op_transform * ary_impulse
+        ary_alpha = np.ones(ws_w.int_subbands,)
+        
+    elif method=='spectrum':
         ary_impulse = nd_impulse(tup_size)
         ws_w = op_transform * ary_impulse
         ary_alpha = zeros(ws_w.int_subbands)
@@ -129,7 +134,6 @@ def circshift(ary_input, tup_shifts):
             shift = tup_shifts[dim]
         except IndexError:
             shift = 0  # no shift if not specify
-  
         index = np.mod(np.array(range(length),
                                 ndmin=ary_input.ndim) - shift,
                                 length)
@@ -812,18 +816,18 @@ def phase_unwrap(phase, dict_global_lims, ls_local_lims):
     """
     phase[phase<dict_global_lims['lowerlimit']] += 2*pi     #global phase corrections
     #not enforcing the upper limit just yet
-    local_mask = np.zeros(phase.size,dtype='bool') #aggregation of where the local corrections take place
+    local_mask = np.zeros(phase.shape,dtype='bool') #aggregation of where the local corrections take place
     for local_lims in ls_local_lims:
-        lowerlimit=local_lims.get_value('lowerlimit')
-        upperlimit=local_lims.get_value('upperlimit')
-        upperleft=local_lims.get_value('upperleft')
-        lowerright=local_lims.get_value('lowerright')
+        lowerlimit=local_lims.get_val('phaselowerlimit',True)
+        upperlimit=local_lims.get_val('phaseupperlimit',True)
+        upperleft=local_lims.get_val('regionupperleft',True)
+        lowerright=local_lims.get_val('regionlowerright',True)
         phase_region = phase[upperleft[1]:lowerright[1],upperleft[0]:lowerright[0]]
         phase_region[phase_region<lowerlimit]+=2*pi
         phase_region[phase_region<upperlimit]-=2*pi
         phase[upperleft[1]:lowerright[1],upperleft[0]:lowerright[0]] = phase_region
         #aggregate the mask of local limits bounding boxes
-        local_lims_mask=np.zeros(phase.size,dtype='bool')
+        local_lims_mask=np.zeros(phase.shape,dtype='bool')
         local_lims_mask[upperleft[1]:lowerright[1],upperleft[0]:lowerright[0]]=True
         local_mask+=local_lims_mask
 

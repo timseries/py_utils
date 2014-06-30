@@ -146,21 +146,26 @@ class WS(object):
         return WS(np.abs(self.ary_lowpass)**2,tuple([np.abs(ary_coeffs)**2 for ary_coeffs in self.tup_coeffs]))
 
     def cast(self,str_dtype):
-        '''Returns a copy of this object with all values cast to dtype
-        '''
+        """Returns a copy of this object with all values cast to dtype
+        """
         return WS(np.array(self.ary_lowpass,dtype=str_dtype),
                   tuple([np.array(ary_coeffs,dtype=str_dtype) 
                          for ary_coeffs in self.tup_coeffs]))
         
     def __add__(self,summand):
         if summand.__class__.__name__=='WS':
-            return WS(self.ary_lowpass+summand.ary_lowpass,tuple([self.tup_coeffs[j] + summand.tup_coeffs[j] for j in xrange(self.int_levels)]))
+            return WS(self.ary_lowpass+summand.ary_lowpass,
+        tuple([self.tup_coeffs[j] + summand.tup_coeffs[j] for j in xrange(self.int_levels)]))
         else:
             return WS(self.ary_lowpass+summand,tuple([ary_coeffs+summand for ary_coeffs in self.tup_coeffs]))
 
+    def __radd__(self,summand):
+        return self.__add__(summand)    
+
     def nonzero(self):
-        '''returns a WS object with True in all of the non-zero positions
-        '''
+        """returns a WS object with True in all of the non-zero positions
+        """
+        
         return self.cast('bool')
     
     def __mul__(self,multiplicand):
@@ -169,8 +174,16 @@ class WS(object):
                       tuple([self.tup_coeffs[j] * multiplicand.tup_coeffs[j] 
                              for j in xrange(self.int_levels)]))
         else:
-            return WS(multiplicand*self.ary_lowpass,tuple(multiplicand*np.array(self.tup_coeffs)))
+            return WS(multiplicand*self.ary_lowpass, tuple(multiplicand*np.array(self.tup_coeffs)))
 
+    def __div__(self,divisor):
+        if divisor.__class__.__name__=='WS':
+            return WS(self.ary_lowpass / divisor.ary_lowpass,
+                      tuple([self.tup_coeffs[j] / divisor.tup_coeffs[j] 
+                             for j in xrange(self.int_levels)]))
+        else:
+            return WS(self.ary_lowpass / divisor, tuple(np.array(self.tup_coeffs) / divisor))
+        
     def invert(self):
         return WS(1.0/self.ary_lowpass,tuple(1.0/np.array(self.tup_coeffs)))
         
@@ -188,9 +201,9 @@ class WS(object):
             self.tup_coeffs[int_level][(Ellipsis,int_orientation)] = value
 
     # def f_flatten(self):
-    #     '''
+    #     """
     #     Returns the wavelet object as a vector (Nx1 ndarray)
-    #     '''
+    #     """
     #     if self.dims == None:
     #         self.dims = [ary_lowpass.shape]
     #         self.dims = self.dims.append([self.tup_coeffs[int_level][(Ellipsis,int_orientation)].shape \

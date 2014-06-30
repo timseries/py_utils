@@ -28,6 +28,9 @@ class OutputImage(Metric):
         self.output_extension = self.get_val('outputextension', False, DEFAULT_IMAGE_EXT)
         #just the last 'frame' of image data, where frames are indexed by iteration, for legacy support (superceded by .update_once)
         self.last_frame_only = self.get_val('lastframeonly',True) 
+        self.im_range_key = self.get_val('imrangekey',False) 
+        if not self.im_range_key:
+            self.im_range_key = 'x'
         self.print_values = 0 #we never want to print array data...
         self.has_csv = False #we can't save these to csv format like other metrics
         
@@ -42,10 +45,10 @@ class OutputImage(Metric):
             self.slices = [slice(0,None,None) if i < 2 else 
                            slice(max(0,min(self.slice,value.shape[i])),None,None) 
                            for i in xrange(value.ndim)]
-            if dict_in.has_key('x'):
-                im_range_key='x'
-            else: #no ground truth, default to observation for input range
+            if not dict_in.has_key(self.im_range_key):
                 im_range_key='y'
+            else: #no ground truth, default to observation for input range
+                im_range_key=self.im_range_key
             self.input_range = np.asarray([np.min(dict_in[im_range_key]),
                                            np.max(dict_in[im_range_key])])
         super(OutputImage,self).update(value[self.slices])
