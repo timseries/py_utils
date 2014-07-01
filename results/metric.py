@@ -46,7 +46,7 @@ class Metric(Section):
             plt.plot(array(self.data)[sl])
         
     def update(self, value=None):
-        if value != None and self.update_enabled:
+        if value is not None and self.update_enabled:
             self.data.append(value)
             if self.update_once:
                 self.update_enabled=False    

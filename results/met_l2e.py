@@ -32,7 +32,6 @@ class L2E(Metric):
                 self.mask = dict_in['mask']
             self.theta = dict_in['theta']
             self.theta_masked_energy = norm((self.mask * dict_in['theta']).flatten(), 2)
-            
         value = norm((self.mask*(dict_in['theta_n'] - self.theta)).flatten(), 2) / self.theta_masked_energy
         super(L2E,self).update(value)
         

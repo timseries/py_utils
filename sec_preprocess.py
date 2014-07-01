@@ -10,6 +10,8 @@ from py_operators.operator_comp import OperatorComp
 
 import matplotlib.pyplot as plt
 
+import pdb
+
 class Preprocess(Section):
     """A configurable set of data preprocessing routines. 
 
@@ -60,10 +62,9 @@ class Preprocess(Section):
                 frame_order = [1, 0]
                 
             #Fully sampled fourier transform in order to extract phase data
-            
             for frame in xrange(2):
                 dict_in['x'][:,:,frame]=fftn(fftshift(dict_in['x'][:,:,frame]))
-            if self.get_val('extrafftshift',False):
+            if self.get_val('extrafftshift',True):
                 for frame in xrange(2):
                     dict_in['x'][:,:,frame] = fftshift(dict_in['x'][:,:,frame])
                         
