@@ -1,6 +1,6 @@
 #!/usr/bin/python -tt
 import numpy as np
-from numpy import max as nmax, conj, mean, log10, real, angle, abs as nabs
+from numpy import max as nmax, conj, mean, log10, real, angle, abs as nabs, exp
 from numpy.linalg import norm
 from numpy import asarray as ar
 from numpy.random import permutation
@@ -185,7 +185,9 @@ class Observe(Section):
             dict_in['x_0'] = (~Fu) * dict_in['y']
             dict_in['theta_0'] = angle(dict_in['x_0'])
             dict_in['theta_0'] = su.phase_unwrap(dict_in['theta_0'],dict_in['dict_global_lims'],dict_in['ls_vcorrect_secs'])
+            dict_in['theta_0'] *= dict_in['mask']
             dict_in['magnitude_0'] = nabs(dict_in['x_0'])
+            dict_in['x_0'] = dict_in['magnitude_0']*exp(1j*dict_in['theta_0'])
 
     def compute_bsnr(self,dict_in,noise_pars):
         Hx = dict_in['Hx'].flatten()

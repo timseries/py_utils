@@ -824,7 +824,7 @@ def phase_unwrap(phase, dict_global_lims, ls_local_lims):
         lowerright=local_lims.get_val('regionlowerright',True)
         phase_region = phase[upperleft[1]:lowerright[1],upperleft[0]:lowerright[0]]
         phase_region[phase_region<lowerlimit]+=2*pi
-        phase_region[phase_region<upperlimit]-=2*pi
+        phase_region[phase_region>upperlimit]-=2*pi
         phase[upperleft[1]:lowerright[1],upperleft[0]:lowerright[0]] = phase_region
         #aggregate the mask of local limits bounding boxes
         local_lims_mask=np.zeros(phase.shape,dtype='bool')

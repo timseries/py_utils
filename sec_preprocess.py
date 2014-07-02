@@ -95,7 +95,6 @@ class Preprocess(Section):
             
             theta = phase_unwrap(theta, dict_global_lims, ls_vcorrect_secs)
             magnitude /= np.max(nabs(magnitude))
-
             dict_in['x'] = magnitude*exp(1j*theta)
             dict_in['theta'] = theta
             dict_in['magnitude'] = magnitude
