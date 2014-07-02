@@ -47,7 +47,7 @@ class Section(object):
 
     def get_params_fname(self,ext=True):
         if ext==False:
-            return self.ps_parameters.str_fname.split('.')[1]
+            return self.ps_parameters.str_fname.split('.')[0]
         return self.ps_parameters.str_fname
 
     def get_subsections(self,str_key):

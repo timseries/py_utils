@@ -3,6 +3,7 @@ from numpy import arange, array, maximum, zeros
 from py_utils.section import Section
 import matplotlib
 import matplotlib.pyplot as plt
+from mpldatacursor import datacursor
 from py_utils.results.defaults import DEFAULT_CSV_EXT,DEFAULT_KEY
 
 class Metric(Section):
@@ -44,6 +45,7 @@ class Metric(Section):
                 slice_end = None
             sl=slice(slice_start,slice_end)
             plt.plot(array(self.data)[sl])
+            datacursor(display='single')
         
     def update(self, value=None):
         if value is not None and self.update_enabled:

@@ -4,6 +4,7 @@ from libtiff import TIFF as tif
 import matplotlib.pyplot as plt
 import png
 from PIL import Image
+from mpldatacursor import datacursor
 import os
 
 from py_utils.results.metric import Metric
@@ -59,6 +60,7 @@ class OutputImage(Metric):
         if self.data[-1].ndim==2:
             plt.figure(self.figure_number)
             plt.imshow(self.data[-1][self.slices],cmap='gray')
+            datacursor(display='single')
 
     def save(self,strPath='/home/outputimage'):
         if len(self.data)==0:
@@ -87,9 +89,14 @@ class OutputImage(Metric):
             #clip the output range to the input range
             write_data[write_data<self.input_range[0]]=self.input_range[0]
             write_data[write_data>self.input_range[1]]=self.input_range[1]
+            #shift in the case of a negative lower limit (can't have negative intensities)
+            if self.input_range[0]<0:
+                write_data+=np.abs(self.input_range[0])
             #double precision is memory consumptive
             write_data=np.asarray(write_data,dtype='float32')
             if self.output_extension=='png':
+                write_data/=np.max(write_data)
+                write_data*=255
                 f = open(strSavePath,'wb')
                 w = png.Writer(*(write_data.shape[1],write_data.shape[0]),greyscale=True)
                 w.write(f,write_data)

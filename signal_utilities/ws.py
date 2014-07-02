@@ -155,18 +155,37 @@ class WS(object):
     def __add__(self,summand):
         if summand.__class__.__name__=='WS':
             return WS(self.ary_lowpass+summand.ary_lowpass,
-        tuple([self.tup_coeffs[j] + summand.tup_coeffs[j] for j in xrange(self.int_levels)]))
-        else:
+                      tuple([self.tup_coeffs[j] + summand.tup_coeffs[j] for j in xrange(self.int_levels)]))
+        elif (summand.__class__.__name__=='ndarray' and 
+              summand.shape[-1] == 1 and 
+              summand.shape[0] == self.int_subbands):
+            ws_temp = self*1 #temporary copy
+            for s in xrange(self.int_subbands-1,-1,-1):
+                ws_temp.set_subband(s,ws_temp.get_subband(s)+summand[s])
+            return ws_temp    
+        else:    
             return WS(self.ary_lowpass+summand,tuple([ary_coeffs+summand for ary_coeffs in self.tup_coeffs]))
 
     def __radd__(self,summand):
         return self.__add__(summand)    
 
+    def __rsub__(self,subtrahend):
+        return self.__sub__(subtrahend)    
+
+    def __rmul__(self,multiplicand):
+        return self.__mul__(multiplicand)    
+
+    def __sub__(self,subtrahend):
+        return self.__add__(-1.0*subtrahend)    
+
+
     def nonzero(self):
         """returns a WS object with True in all of the non-zero positions
         """
-        
         return self.cast('bool')
+
+    def __invert__(self):
+        return 1-self.cast('bool')
     
     def __mul__(self,multiplicand):
         if multiplicand.__class__.__name__=='WS':
@@ -341,7 +360,7 @@ class WS(object):
         return it.product(np.arange(self.int_levels),np.arange(self.int_orientations))
 
     def is_wavelet_complex(self):
-        return str(self.tup_coeffs[0][(Ellipsis,0)].dtype)[0:7]=='complex'
+        return np.iscomplexobj(self.tup_coeffs[0])
 
     def is_lowpass_complex(self):
-        return str(self.ary_lowpass.dtype)[0:7]=='complex'
+        return np.iscomplexobj(self.ary_lowpass)
