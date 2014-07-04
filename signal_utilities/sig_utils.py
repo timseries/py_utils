@@ -817,11 +817,11 @@ def phase_unwrap(phase, dict_global_lims, ls_local_lims):
     phase[phase<dict_global_lims['lowerlimit']] += 2*pi     #global phase corrections
     #not enforcing the upper limit just yet
     local_mask = np.zeros(phase.shape,dtype='bool') #aggregation of where the local corrections take place
-    for local_lims in ls_local_lims:
-        lowerlimit=local_lims.get_val('phaselowerlimit',True)
-        upperlimit=local_lims.get_val('phaseupperlimit',True)
-        upperleft=local_lims.get_val('regionupperleft',True)
-        lowerright=local_lims.get_val('regionlowerright',True)
+    for local_lim in ls_local_lims:
+        lowerlimit=local_lim['phaselowerlimit']
+        upperlimit=local_lim['phaseupperlimit']
+        upperleft=local_lim['regionupperleft']
+        lowerright=local_lim['regionlowerright']
         phase_region = phase[upperleft[1]:lowerright[1],upperleft[0]:lowerright[0]]
         phase_region[phase_region<lowerlimit]+=2*pi
         phase_region[phase_region>upperlimit]-=2*pi

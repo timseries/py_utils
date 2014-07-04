@@ -184,7 +184,7 @@ class Observe(Section):
             dict_in['y'] = dict_in['Fx'] + dict_in['n']
             dict_in['x_0'] = (~Fu) * dict_in['y']
             dict_in['theta_0'] = angle(dict_in['x_0'])
-            dict_in['theta_0'] = su.phase_unwrap(dict_in['theta_0'],dict_in['dict_global_lims'],dict_in['ls_vcorrect_secs'])
+            dict_in['theta_0'] = su.phase_unwrap(dict_in['theta_0'],dict_in['dict_global_lims'],dict_in['ls_local_lim_secs'])
             dict_in['theta_0'] *= dict_in['mask']
             dict_in['magnitude_0'] = nabs(dict_in['x_0'])
             dict_in['x_0'] = dict_in['magnitude_0']*exp(1j*dict_in['theta_0'])
@@ -200,3 +200,5 @@ class Observe(Section):
     class Factory:
         def create(self,ps_params,str_section):
             return Observe(ps_params,str_section)
+
+        
