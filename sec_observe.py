@@ -65,10 +65,16 @@ class Observe(Section):
             noise_pars['interval'] = self.get_val('noiseinterval',True)#uniform
             noise_pars['size'] = dict_in['x'].shape
             dict_in['noisevariance'] = noise_pars['variance']
+            noise_pars['complex'] = 0
+            
+            if self.str_type == 'compressed_sensing':
+                noise_pars['complex'] = 1
+                
             if dict_in['noisevariance']>0:
                 dict_in['n'] = noise_gen(noise_pars)
             else:
                 dict_in['n'] = 0
+                
         elif self.str_type=='classification':
             #partition the classification dataset into an 'observed' training set
             #and an unobserved evaluation/test set, and generate features
@@ -180,8 +186,8 @@ class Observe(Section):
             
         elif self.str_type == 'compressed_sensing':
             Fu = self.Phi
-            dict_in['Fx'] = Fu * dict_in['x']
-            dict_in['y'] = dict_in['Fx'] + dict_in['n']
+            dict_in['Hx'] = Fu * dict_in['x']
+            dict_in['y'] = dict_in['Hx'] + dict_in['n']
             dict_in['x_0'] = (~Fu) * dict_in['y']
             dict_in['theta_0'] = angle(dict_in['x_0'])
             dict_in['theta_0'] = su.phase_unwrap(dict_in['theta_0'],dict_in['dict_global_lims'],dict_in['ls_local_lim_secs'])

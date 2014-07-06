@@ -36,6 +36,7 @@ class OutputImage(Metric):
             self.im_range_key = 'x'
         self.print_values = 0 #we never want to print array data...
         self.has_csv = False #we can't save these to csv format like other metrics
+        self.cmap = self.get_val('colormap',False,'gray')
         
     def update(self,dict_in):
         """Takes a 2D or 3D image or volume . If a volume, display the :attr:`self.slice` if specified, otherwise display volume using Myavi. Aggregate images/slices into a volume to view the reconstruction later, or save volumes
@@ -59,7 +60,9 @@ class OutputImage(Metric):
     def plot(self):
         if self.data[-1].ndim==2:
             plt.figure(self.figure_number)
-            plt.imshow(self.data[-1][self.slices],cmap='gray')
+            plt.imshow(self.data[-1][self.slices],cmap=self.cmap)
+            if self.get_val('colorbar',True):
+                plt.colorbar()
             datacursor(display='single')
 
     def save(self,strPath='/home/outputimage'):
@@ -98,7 +101,7 @@ class OutputImage(Metric):
                 write_data/=np.max(write_data)
                 write_data*=255
                 f = open(strSavePath,'wb')
-                w = png.Writer(*(write_data.shape[1],write_data.shape[0]),greyscale=True)
+                w = png.Writer(*(write_data.shape[1],write_data.shape[0]),greyscale=(self.cmap=='gray'))
                 w.write(f,write_data)
                 f.close()
             elif self.output_extension=='eps':
@@ -106,7 +109,9 @@ class OutputImage(Metric):
                 ax = plt.Axes(fig,[0,0,1,1])
                 ax.set_axis_off()
                 fig.add_axes(ax)
-                ax.imshow(write_data,cmap='gray')
+                img = ax.imshow(write_data,cmap=self.cmap)
+                if self.get_val('colorbar',True):
+                    fig.colorbar(img)
                 plt.savefig(strSavePath, format="eps",bbox_inches='tight')
             elif self.output_extension=='tif':
                 output = tif.open(strSavePath, mode='w')

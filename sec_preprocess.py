@@ -53,12 +53,15 @@ class Preprocess(Section):
             #load the mask
             if mask_sec_in:
                 sec_mask_in = sf.create_section(self.get_params(),mask_sec_in)
-                dict_in['mask'] = sec_mask_in.read(dict_in, True)
+                dict_in['mask'] = np.asarray(sec_mask_in.read(dict_in, True), dtype='bool')
+            else:
+                dict_in['mask'] = True
+                
             if bmask_sec_in:    
                 sec_bmask_in = sf.create_section(self.get_params(),bmask_sec_in)
-                dict_in['boundarymask'] = sec_bmask_in.read(dict_in, True)
+                dict_in['boundarymask'] = ~np.asarray(sec_bmask_in.read(dict_in, True), dtype='bool')
             else:
-                raise ValueError('need a mask section input')   
+                dict_in['boundarymask'] = False
 
             if self.get_val('nmracquisition'): #compute phase from lab measurement
                 #The frame ordering determines in which direction to compute the 

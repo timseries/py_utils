@@ -157,18 +157,25 @@ def noise_gen(noise_params):
     dbl_variance = noise_params['variance']
     tup_size = noise_params['size']
 
-    #set the seed, always set the seed!
-    seed(int_seed)
-    if noise_params['distribution'] == 'gaussian':
-        ary_noise = normal(dbl_mean, np.sqrt(dbl_variance), tup_size)
-    elif noise_params['distribution'] == 'uniform':
-        ary_interval = noise_params['interval']
-        ary_noise = (ary_interval[1] - ary_interval[0]) * rand(tup_size) + ary_interval[0]
-    elif noise_params['distribution'] == 'poisson':     
-        ary_noise = poisson(lam=noise_params['ary_mean'])
-    else:
-        raise Exception('unsupported noise distribution: ' + noise_params['distribution'])
-    return ary_noise
+    ary_noise = []
+
+    #generate real or complex noise
+    for ix in xrange(noise_params['complex']+1):
+        seed(int_seed + ix)
+        if noise_params['distribution'] == 'gaussian':
+            ary_noise.append(normal(dbl_mean, np.sqrt(dbl_variance), tup_size))
+        elif noise_params['distribution'] == 'uniform':
+            ary_interval = noise_params['interval']
+            ary_noise.append((ary_interval[1] - ary_interval[0]) * rand(tup_size) + ary_interval[0])
+        elif noise_params['distribution'] == 'poisson':     
+            ary_noise.append(poisson(lam=noise_params['ary_mean']))
+        else:
+            raise Exception('unsupported noise distribution: ' + noise_params['distribution'])
+
+    if noise_params['complex']:
+        return ary_noise[0] + 1j*ary_noise[1]
+    else:    
+        return ary_noise[0]
 
 def colonvec(ary_small, ary_large):
     """
