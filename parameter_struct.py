@@ -6,8 +6,6 @@ import os.path
 from os.path import exists, dirname, expanduser
 import itertools
 
-import pdb
-
 class ParameterStruct(object):
     """
     Base class for defining other classes which inherit properties from a config.
@@ -28,8 +26,8 @@ class ParameterStruct(object):
         pathsplit=os.path.split(str_file_path)
         self.str_file_dir = pathsplit[0]
         self.str_fname = pathsplit[1]
-        self.str_fname_noext = self.str_fname.split('.')[0]
-        self.str_ext = self.str_fname.split('.')[1]
+        self.str_fname_noext, self.str_ext = os.path.splitext(self.str_fname)
+        self.str_ext = self.str_ext[1:]
         self.section_names = self.config._sections.keys()
         
     def write(self,str_file_path=None):
@@ -98,7 +96,7 @@ class ParameterStruct(object):
                 self.set_key_val_pairs(section, [param], [paramval])
                 itemstring += param + ':' + paramval + '-'
             itemstring = itemstring[:-1]
-            config_path = self.str_file_dir + '/' + self.str_fname_noext + '-' + itemstring + '.' + self.str_ext
+            config_path = self.str_file_dir + '/' + self.str_fname_noext.split('_all')[0] + '_' + itemstring + '.' + self.str_ext
             self.write(config_path)
             config_paths.append(config_path)
         return config_paths

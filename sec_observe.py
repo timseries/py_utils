@@ -68,7 +68,7 @@ class Observe(Section):
             noise_pars['complex'] = 0
             
             if self.str_type == 'compressed_sensing':
-                noise_pars['complex'] = 1
+                noise_pars['complex_noise'] = 1
                 
             if dict_in['noisevariance']>0:
                 dict_in['n'] = noise_gen(noise_pars)

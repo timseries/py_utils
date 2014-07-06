@@ -160,7 +160,7 @@ def noise_gen(noise_params):
     ary_noise = []
 
     #generate real or complex noise
-    for ix in xrange(noise_params['complex']+1):
+    for ix in xrange(noise_params['complex_noise']+1):
         seed(int_seed + ix)
         if noise_params['distribution'] == 'gaussian':
             ary_noise.append(normal(dbl_mean, np.sqrt(dbl_variance), tup_size))
@@ -172,7 +172,7 @@ def noise_gen(noise_params):
         else:
             raise Exception('unsupported noise distribution: ' + noise_params['distribution'])
 
-    if noise_params['complex']:
+    if noise_params['complex_noise']:
         return ary_noise[0] + 1j*ary_noise[1]
     else:    
         return ary_noise[0]

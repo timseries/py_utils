@@ -63,7 +63,7 @@ class Preprocess(Section):
             else:
                 dict_in['boundarymask'] = False
 
-            if self.get_val('nmracquisition'): #compute phase from lab measurement
+            if self.get_val('nmracquisition',True): #compute phase from lab measurement
                 #The frame ordering determines in which direction to compute the 
                 #phase differences to obtain positive velocities
 

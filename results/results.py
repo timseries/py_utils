@@ -50,7 +50,7 @@ class Results(Section):
                                             default_value=self.get_params_fname(False))
         self.overwrite_results = self.get_val('overwriteresults',True)
         self.zeros = self.get_val('zeros', True, DEFAULT_ZEROS)
-        self.display_enabled = ~(self.get_val('diable_plots',True) == 1)
+        self.display_enabled = not self.get_val('disablefigures',True)
         self.monitor_count=0
         self.resolutions=tuple()
         
