@@ -1,6 +1,7 @@
 #!/usr/bin/python -tt
 from libtiff import TIFF as tif
 from PIL import Image
+import nibabel as nib
 from matplotlib import pyplot as plt
 from scipy import misc
 import numpy as np
@@ -118,6 +119,8 @@ class Input(Section):
             file_data = np.load(self.filepath)[member]
         elif str_extension == 'json':
             raise ValueError('json not coded yet')
+        elif str_extension == 'mnc':
+            file_data = nib.load(self.filepath).get_data()
         else:
             raise Exception('unsupported format: ' + str_extension)
         return file_data

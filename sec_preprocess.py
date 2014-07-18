@@ -4,7 +4,7 @@ from numpy import max as nmax, conj, mean, angle, sqrt, exp, abs as nabs
 from numpy.fft import fftn, ifftn, fftshift
 
 from py_utils.section import Section
-from py_utils.signal_utilities.sig_utils import phase_unwrap
+from py_utils.signal_utilities.sig_utils import phase_unwrap, pad_center, crop_center
 from py_utils.section_factory import SectionFactory as sf
 from py_operators.operator_comp import OperatorComp
 
@@ -35,7 +35,17 @@ class Preprocess(Section):
             'x' (ndarray): The 'ground truth' input signal to be modified.
         """
         #build the preprocessing parameters
-        if (self.str_type == 'phasevelocity'):
+        if (self.str_type == 'brainwebmri'):
+            #need to pad/crop the input data for wavelet processing
+            input_shape = dict_in['x'].shape
+            new_shape = self.get_val('cropsize', True)
+            if new_shape:
+                new_shape = tuple(new_shape)
+                dict_in['x'] = crop_center(dict_in['x'], new_shape)
+            else:
+                new_shape = 2 ** np.ceil(np.log2(input_shape))
+                dict_in['x'] = pad_center(dict_in['x'], new_shape)
+        elif (self.str_type == 'phasevelocity'):
             mask_sec_in = self.get_val('masksectioninput',False)
             bmask_sec_in = self.get_val('boundarymasksectioninput',False)
             ls_local_lim_sec_in = self.get_val('vcorrects',False)
