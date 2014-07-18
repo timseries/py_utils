@@ -206,5 +206,3 @@ class Observe(Section):
     class Factory:
         def create(self,ps_params,str_section):
             return Observe(ps_params,str_section)
-
-        
