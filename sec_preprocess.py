@@ -39,7 +39,7 @@ class Preprocess(Section):
             #need to pad/crop the input data for wavelet processing
             input_shape = dict_in['x'].shape
             new_shape = self.get_val('cropsize', True)
-            if new_shape:
+            if new_shape.__class__.__name__ == 'ndarray':
                 new_shape = tuple(new_shape)
                 dict_in['x'] = crop_center(dict_in['x'], new_shape)
             else:

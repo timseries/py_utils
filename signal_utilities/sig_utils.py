@@ -60,7 +60,7 @@ def spectral_radius(op_transform, op_modality, tup_size, method='spectrum'):
     elif method=='power_iteration':
         W = op_transform
         Phi = op_modality
-        ws_rv = op_transform * rand(*tup_size) #random vector
+        ws_rv = op_transform * rand(*tup_size) #random vector (white noise)
         ary_eigs = np.zeros(ws_rv.int_subbands)
         for s in xrange(ws_rv.int_subbands):
             ws_ss = ws_rv.one_subband(s)
@@ -68,17 +68,16 @@ def spectral_radius(op_transform, op_modality, tup_size, method='spectrum'):
             while i < 30:
                 ws_ss = A(W,Phi,ws_ss) #to image domain
                 ws_ss = At(W,Phi,ws_ss) #back to wavelet domain
-                ws_ss_norm = norm(ws_ss.flatten(),2)
-                for s2 in xrange(ws_ss.int_subbands):
-                    ws_ss.set_subband(s2,ws_ss.get_subband(s2)/ws_ss_norm)
-                i += 1    
+                ws_ss_norm = norm(ws_ss.flatten(lgc_real=True),2)
+                ws_ss /= ws_ss_norm
                 ws_ss = ws_ss.one_subband(s)    
+                i += 1    
             AtAws_ss = A(W,Phi,ws_ss)
-            AtAws_ss = At(W,Phi,AtAws_ss).flatten()
-            print np.sum(ws_ss.flatten().transpose() * AtAws_ss)
-            print ws_ss_norm
-            ary_eigs[s] = np.sum(ws_ss.flatten().transpose() * AtAws_ss) / ws_ss_norm
-            print ary_eigs[s]
+            AtAws_ss = At(W,Phi,AtAws_ss).flatten(lgc_real=True)
+            # print np.sum(ws_ss.flatten(lgc_real=True).transpose() * AtAws_ss)
+            # print ws_ss_norm
+            ary_eigs[s] = np.sum(ws_ss.flatten(lgc_real=True).transpose() * AtAws_ss) / ws_ss_norm
+            print 'computing subband weight ' + str(s) + ' using poweriteration'
             print ary_eigs
         ary_alpha = np.minimum(ary_eigs,1.0)
     else:
@@ -160,10 +159,11 @@ def noise_gen(noise_params):
     ary_noise = []
 
     #generate real or complex noise
-    for ix in xrange(noise_params['complex_noise']+1):
+    variance_divisor = noise_params['complex_noise']+1
+    for ix in xrange(variance_divisor):
         seed(int_seed + ix)
         if noise_params['distribution'] == 'gaussian':
-            ary_noise.append(normal(dbl_mean, np.sqrt(dbl_variance), tup_size))
+            ary_noise.append(normal(dbl_mean, np.sqrt(dbl_variance/variance_divisor), tup_size))
         elif noise_params['distribution'] == 'uniform':
             ary_interval = noise_params['interval']
             ary_noise.append((ary_interval[1] - ary_interval[0]) * rand(tup_size) + ary_interval[0])
@@ -272,13 +272,23 @@ def shift_slices(shift):
 def downsample_slices(int_dim):
     """Return a list of list of slices used for downsampling by a factor of 2
     in every dimension, for each of 2**int_dim offsets
+
+    For instance: the one dimensional array (a,b,c,d,e,f,g)
+    Has two (2**1) possible downsamplings: (a,c,e,g), (b,d,f)
     """
-    num_slices = 2**int_dim
+    num_slices = 2**int_dim #the total number of offsets
+
+    #tricky. The inner loop iterates over possible offsets in int_dim dimensions
+    #for a given factor-2 downsampling (there are only 2 possible offsets, 0 and 1, for each dimension.
+    #In the first iteration of the outer loop, j==0, so we have offset 0 applied to each dimension.
     return [[slice(dec_to_bin(j,int_dim)[i],None,2) for i in xrange(int_dim)] for j in xrange(num_slices)]
             
 def dec_to_bin(int_decimal,width=None):
     """returns int_decimal as a list of binary digits, with the lsbit
-    being the first element, with msb padding
+    being the first element, with msb padding if width > log2(int_decimal)
+
+    e.g. int(10),width=5 -> [0,1,0,1,0]
+    
     """ 
     bin_string = bin(int_decimal)
     bin_width = len(bin_string)-2
@@ -297,14 +307,22 @@ def gaussian(shape=(3,3),sigma=(0.5,0.5)):
     2D gaussian - should give the same result as MATLAB's
     fspecial('gaussian',[shape],[sigma])
     """
-    m,n = [(ss-1.)/2. for ss in shape]
-    y,x = np.ogrid[-m:m+1,-n:n+1]
-    h = np.exp( -(x*x + y*y) / (2.*sigma[0]*sigma[1]) )
-    h[ h < np.finfo(h.dtype).eps*h.max() ] = 0
-    sumh = h.sum()
-    if sumh != 0:
-        h /= sumh
-    return h
+    # m,n = [(ss-1.)/2. for ss in shape]
+    # y,x = np.ogrid[-m:m+1,-n:n+1]
+    if len(shape) != len(sigma):
+        raise ValueError('sigma and kernel shape should have the same dimenison')
+        
+    shape = tuple([(ss-1.)/2. for ss in shape])
+    gridpts = np.ogrid[[slice(-shape[i],shape[i]+1,None) for i in xrange(len(shape))]]
+    
+    # h = np.exp( -(x*x + y*y) / (2.*sigma[0]*sigma[1]) )
+    denominator = (np.sqrt(2.0)**len(shape)) * np.product(sigma)
+    pdf = np.exp(-sum([gridpt**2 for gridpt in gridpts]) / denominator)
+    pdf[pdf < np.finfo(pdf.dtype).eps*pdf.max()] = 0
+    sum_pdf = pdf.sum()
+    if sum_pdf != 0:
+        pdf /= sum_pdf
+    return pdf
 
 def upsample(ary_input,factor=2,method='shiftadd'):
     ary_upsampled = np.zeros(np.array(ary_input.shape)*factor)

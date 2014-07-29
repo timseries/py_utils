@@ -53,15 +53,9 @@ class WS(object):
         int_subband_index have been set to 0.
         """ 
         #create new object
-        ws_one_subband = WS(self.ary_lowpass,self.tup_coeffs)
-        if int_subband_index != 0:
-            ws_one_subband.ary_lowpass = np.zeros(self.ary_lowpass.shape)
-            int_level_s, int_orientation_s = self.lev_ori_from_subband(int_subband_index)
-        for int_level in np.arange(self.int_levels):
-            for int_orientation in np.arange(self.int_orientations):
-                if int_subband_index == 0 or \
-                  (not (int_level == int_level_s and int_orientation == int_orientation_s)):
-                    ws_one_subband.tup_coeffs[int_level][(Ellipsis,int_orientation)] = 0
+        # ws_one_subband =  WS(self.ary_lowpass,self.tup_coeffs)
+        ws_one_subband = 0 * self
+        ws_one_subband.set_subband(int_subband_index, self.get_subband(int_subband_index))
         return ws_one_subband
 
     def get_subband(self,int_subband_index):
@@ -277,7 +271,7 @@ class WS(object):
             ws_vector_dtype='float32'
         if self.ws_vector == None or int_len_ws_vector!=self.ws_vector.size:
             self.ws_vector = np.zeros(int_len_ws_vector,dtype=ws_vector_dtype)
-        int_stride = self.ary_lowpass.size*int_if_wav
+        int_stride = self.ary_lowpass.size*int_if_low
         int_p_stride = 0
         #the lowpass image
         if int_if_low==2:
@@ -300,7 +294,8 @@ class WS(object):
 
     def unflatten(self,new_ws_vector=None,lgc_real=False):
         '''
-        Stores the ws_vector back in the ws object
+        Unflattens the new_ws_vector back in this ws object, if provided. Otherwise
+        unflatten the self.ws_vector attribute.
         '''
         if new_ws_vector!=None:
             self.ws_vector=new_ws_vector

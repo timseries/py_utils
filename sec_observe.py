@@ -13,6 +13,8 @@ import py_utils.signal_utilities.sig_utils as su
 from py_utils.signal_utilities.sig_utils import nd_impulse, circshift, colonvec, noise_gen, crop_center, pad_center
 from py_operators.operator_comp import OperatorComp
 
+from collections import defaultdict
+
 import pdb 
 import matplotlib.pyplot as plt
 
@@ -57,7 +59,7 @@ class Observe(Section):
             self.str_type == 'compressed_sensing'):
             wrf = self.get_val('wienerfactor',True)
             str_domain = self.get_val('domain',False)
-            noise_pars = {} #build a dict to generate the noise
+            noise_pars = defaultdict(int) #build a dict to generate the noise
             noise_pars['seed'] = self.get_val('seed',True)
             noise_pars['variance'] = self.get_val('noisevariance', True)
             noise_pars['distribution'] = self.get_val('noisedistribution',False)
@@ -65,11 +67,9 @@ class Observe(Section):
             noise_pars['interval'] = self.get_val('noiseinterval',True)#uniform
             noise_pars['size'] = dict_in['x'].shape
             dict_in['noisevariance'] = noise_pars['variance']
-            noise_pars['complex'] = 0
             
             if self.str_type == 'compressed_sensing':
                 noise_pars['complex_noise'] = 1
-                
             if dict_in['noisevariance']>0:
                 dict_in['n'] = noise_gen(noise_pars)
             else:
@@ -132,7 +132,8 @@ class Observe(Section):
                 #the version of y without downsampling
                 dict_in['Hxpn'] = H * dict_in['x'] + dict_in['n']
                 dict_in['DHxpn'] = np.zeros((D*dict_in['Hxpn']).shape)
-                dict_in['n'] = D * dict_in['n']
+                if dict_in['n'].__class__.__name__ == 'ndarray':
+                    dict_in['n'] = D * dict_in['n']
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
                 DH = fftn(Phi*nd_impulse(dict_in['x'].shape))
                 DHt = conj(DH)
@@ -141,15 +142,19 @@ class Observe(Section):
                 dict_in['x_0'] = ~D*real(ifftn(Hty /
                                                (HtDtDH + 
                                                 wrf * noise_pars['variance'])))
-                #interpolation
+                #optional interpolation
                 xdim=dict_in['x'].ndim
-                xshp=dict_in['x'].shape
-                grid=np.mgrid[[slice(0,xshp[j]) for j in xrange(xdim)]]
-                points = np.mgrid[[slice(0,xshp[j],D.ds_factor[j]) for j in xrange(xdim)]]
-                values = dict_in['x_0'][[point.flatten() for point in points]]
-                points = np.vstack([point for point in points]).transpose()
-                interp_vals = griddata(points,values,grid,method='cubic',fill_value=0.0)
-                dict_in['x_0']=interp_vals
+                if self.get_val('interpinitialsolution',True) and xdim < 3:
+                    xshp=dict_in['x'].shape
+                    grids=np.mgrid[[slice(0,xshp[j]) for j in xrange(xdim)]]
+                    grids = tuple([grids[i] for i in xrange(grids.shape[0])])
+                    sampled_coords = np.mgrid[[slice(D.offset[j],xshp[j],D.ds_factor[j]) 
+                                               for j in xrange(xdim)]]
+                    values = dict_in['x_0'][[coord.flatten() for coord in sampled_coords]]
+                    points = np.vstack([sampled_coords[i, Ellipsis].flatten() 
+                                        for i in xrange(sampled_coords.shape[0])]).transpose()
+                    interp_vals = griddata(points,values,grids,method='cubic',fill_value=0.0)
+                    dict_in['x_0']=interp_vals
                 self.compute_bsnr(dict_in,noise_pars)
                 
         elif self.str_type == 'convolution_poisson':
@@ -194,12 +199,16 @@ class Observe(Section):
             dict_in['theta_0'] *= dict_in['mask']
             dict_in['magnitude_0'] = nabs(dict_in['x_0'])
             dict_in['x_0'] = dict_in['magnitude_0']*exp(1j*dict_in['theta_0'])
-
+            self.compute_bsnr(dict_in,noise_pars)
+            
     def compute_bsnr(self,dict_in,noise_pars):
         Hx = dict_in['Hx'].flatten()
         sig_sq = noise_pars['variance']
-        dict_in['bsnr'] = 10*log10((norm(Hx-mean(Hx),ord=2)**2) /
-                                   (Hx.size * sig_sq))
+        if sig_sq == 0:
+            dict_in['bsnr']  = np.inf
+        else:    
+            dict_in['bsnr'] = 10*log10((norm(Hx-mean(Hx),ord=2)**2) /
+                                       (Hx.size * sig_sq))
         print 'observed with BSNR: ' + str(dict_in['bsnr'])
         
 
