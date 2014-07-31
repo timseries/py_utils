@@ -20,27 +20,30 @@ class Section(object):
 
     """
     
-    def __init__(self,ps_parameters,str_section):
+    def __init__(self,ps_parameters = None, str_section = None):
         """Class constructor for Section.
 
         Args
-            ps_parameters (ParameterStruct): See ps_parameters attribute.
+            ps_parameters (ParameterStruct or dict, optional): See ps_parameters attribute.
             str_section (str): See str_section attribute.
         
         """       
         
         self.ps_parameters = ps_parameters
         self.str_section = str_section
-        self.str_object_name = ps_parameters.get_section_dict(str_section)['name']
+        if self.ps_parameters.__class__.__name__ == 'ParameterStruct':
+            self.has_param_struct = True
+            self.str_object_name = ps_parameters.get_section_dict(str_section)['name']
+            self.dict_section = ps_parameters.get_section_dict(self.str_section)
+        else:
+            self.has_param_struct = False
+            self.dict_section = ps_parameters
+            
         str_class_name = self.__class__.__name__
-        if self.str_object_name!=str_class_name and str_class_name!='Section':
-            raise Exception("section class name doesnt match object class name " + \
-                            self.str_object_name + '!=' + str_class_name)
-        self.dict_section = self.get_section_dict()
         
     def get_section_dict(self):
-        return self.ps_parameters.get_section_dict(self.str_section)
-    
+        return self.dict_section
+        
     def get_subsection_strings(self,str_key):
         ls_subsections = self.dict_section[str_key].split()
 
@@ -78,7 +81,11 @@ class Section(object):
             else:
                 val = default_value
         if self.dict_section.has_key(str_key):
-            val = self.ps_parameters.config.get(self.str_section,str_key).strip()
+            if self.has_param_struct:
+                val = self.ps_parameters.config.get(self.str_section,str_key).strip()
+            else:
+                #dictionary mode
+                val = self.ps_parameters[str_key]
             lgc_check_numeric = self.is_number(val)
             if lgc_val_numeric:
                 #test for numeric arrays separated by a space first

@@ -65,7 +65,7 @@ class OutputImage(Metric):
                 plt.colorbar()
             datacursor(display='single')
 
-    def save(self,strPath='/home/outputimage'):
+    def save(self,strPath='/home/outputimage/'):
         if len(self.data)==0:
             return
         if self.last_frame_only or self.update_once:
@@ -76,6 +76,7 @@ class OutputImage(Metric):
             #iterate through the frames    
             #find the correct index offset, given the current path (save_often mode)
             #strPath should contain everything except the current iterate
+            
             files_enumerated = enumerate(os.walk(os.path.dirname(strPath)))
             base_name=os.path.basename(strPath)
             files,dir_info=files_enumerated.next()
@@ -118,7 +119,7 @@ class OutputImage(Metric):
                 #saving as tiff
                 if write_data.ndim==3:
                     #axes swapping due to an oddity in the tiff
-                    #package, writes 3-D ndarray RowsXColumnsXFrames
+                    #package, writes 3-D ndarray RowsXColumnsXFrames by default
                     output.write_image(write_data.swapaxes(2,0).swapaxes(2,1))
                 elif write_data.ndim==2:    
                     output.write_image(write_data)
