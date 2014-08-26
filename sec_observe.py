@@ -200,6 +200,8 @@ class Observe(Section):
             dict_in['magnitude_0'] = nabs(dict_in['x_0'])
             dict_in['x_0'] = dict_in['magnitude_0']*exp(1j*dict_in['theta_0'])
             self.compute_bsnr(dict_in,noise_pars)
+        #store the wavelet domain version of the ground truth
+        dict_in['w']  = self.W * dict_in['x']
             
     def compute_bsnr(self,dict_in,noise_pars):
         Hx = dict_in['Hx'].flatten()

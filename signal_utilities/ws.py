@@ -34,10 +34,11 @@ class WS(object):
         self.get_dims()
         self.ws_vector = None
 
-    def lev_ori_from_subband(self,int_subband_index):
+    def lev_ori_from_subband(self,int_subband_index,ori_degrees=False):
         """
         Given the subband index (>=0), compute the level and orientation indices. Note, 0 
-        corresponds to scaling function.
+        corresponds to lowpass image.
+        If ori_degrees==True, then convert the orientation index to a degree value.
         """        
         if int_subband_index == 0:
             raise Exception("index 0 corresponds to lowpass subband")    
@@ -45,6 +46,16 @@ class WS(object):
             int_subband_index -= 1
             int_level = int_subband_index / self.int_orientations
             int_orientation = int_subband_index % self.int_orientations
+            if ori_degrees:
+                if self.int_orientations==6:
+                    int_orientation = {
+                        0: 15,
+                        1: 45,
+                        2: 75,
+                        3: -75,
+                        4: -45,
+                        5: -15
+                        }.get(int_orientation, 15)
         return int_level, int_orientation
     
     def one_subband(self,int_subband_index):
