@@ -18,10 +18,11 @@ class SRE(Metric):
         Class constructor for SRE.
         """       
         super(SRE,self).__init__(ps_params,str_section)
+        self.real_imag = self.get_val('realorimag',True)
         
     def update(self,dict_in):
         if self.data == []:
-            self.w = dict_in['w']
+            self.w = dict_in['w'][self.real_imag]
             self.subband_energies = [norm(self.w.get_subband(j).flatten(),2)**2 for j in xrange(self.w.int_subbands)]
             legend_labels_temp = [self.w.lev_ori_from_subband(j,ori_degrees=True) for j in xrange(1,self.w.int_subbands)]
             self.legend_labels = ['Lowpass'] + [r'$l$: ' + str(label_el[0]+1)+r', $\theta$: '+ str(label_el[1]) 

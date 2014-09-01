@@ -197,6 +197,11 @@ class WS(object):
             return WS(multiplicand.ary_lowpass*self.ary_lowpass,
                       tuple([self.tup_coeffs[j] * multiplicand.tup_coeffs[j] 
                              for j in xrange(self.int_levels)]))
+        elif multiplicand.__class__.__name__=='ndarray':
+            wstemp  = self*1 #create a copy
+            for j in xrange(self.int_subbands):
+                wstemp.set_subband(j, wstemp.get_subband(j) * multiplicand[j])
+            return wstemp    
         else:
             return WS(multiplicand*self.ary_lowpass, tuple(multiplicand*np.array(self.tup_coeffs)))
 

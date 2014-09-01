@@ -62,7 +62,8 @@ class OutputImage(Metric):
             plt.figure(self.figure_number)
             plt.imshow(self.data[-1][self.slices],cmap=self.cmap)
             if self.get_val('colorbar',True):
-                plt.colorbar()
+                cb = plt.colorbar()
+                # cb.set_clim(self.input_range[0],self.input_range[1])
             datacursor(display='single')
 
     def save(self,strPath='/home/outputimage/'):
@@ -111,8 +112,13 @@ class OutputImage(Metric):
                 ax.set_axis_off()
                 fig.add_axes(ax)
                 img = ax.imshow(write_data,cmap=self.cmap)
+                ax.set_xticklabels([])
+                ax.set_xticks([])
+                ax.set_yticklabels([])
+                ax.set_yticks([])
                 if self.get_val('colorbar',True):
-                    fig.colorbar(img)
+                    cb = fig.colorbar(img)
+                    # cb.set_clim(self.input_range[0],self.input_range[1])
                 plt.savefig(strSavePath, format="eps",bbox_inches='tight')
             elif self.output_extension=='tif':
                 output = tif.open(strSavePath, mode='w')
