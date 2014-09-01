@@ -152,7 +152,7 @@ class Observe(Section):
                                                for j in xrange(xdim)]]
                     values = dict_in['x_0'][[coord.flatten() for coord in sampled_coords]]
                     points = np.vstack([sampled_coords[i, Ellipsis].flatten() 
-                                        for i in xrange(sampled_coords.shape[0])]).transpose()
+                                        for i in xrange(sampled_coords.shape[0])]).transpose() #pts to interp
                     interp_vals = griddata(points,values,grids,method='cubic',fill_value=0.0)
                     dict_in['x_0']=interp_vals
                 self.compute_bsnr(dict_in,noise_pars)
