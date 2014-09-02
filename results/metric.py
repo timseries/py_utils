@@ -98,7 +98,7 @@ class Metric(Section):
                 plt.xlabel(self.xlabel)
             if self.ylabel is not None:
                 plt.ylabel(self.ylabel)
-            if self.legend_pos is not None:
+            if self.legend_pos is None:
                 self.legend_pos = 'upper center'
             if self.legend_labels is not None:
                 plt.rc('text', usetex=True)
