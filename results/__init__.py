@@ -7,6 +7,7 @@ from met_psnr import PSNR
 from met_rer import RER
 from met_l2e import L2E
 from met_subband_rel_error import SRE
+from met_subband_cluster_variance import SCV
 from met_output_image import OutputImage
 from met_output_montage import OutputMontage
 from met_output_object import OutputObject

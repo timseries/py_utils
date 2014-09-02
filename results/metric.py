@@ -55,8 +55,10 @@ class Metric(Section):
         else:
             self.plotfun = plt.plot
         self.ylim = self.get_val('ylim',True,None,False)    
+        self.xlim = self.get_val('xlim',True,None,False)    
         self.ylabel = self.get_val('ylabel',False,None,False)    
         self.xlabel = self.get_val('xlabel',False,None,False)    
+        self.legend_pos = None
         if self.xlabel is None:
             self.xlabel = r'Iteration'
         self.legend_cols = 1
@@ -88,10 +90,16 @@ class Metric(Section):
                 
             if self.ylim is not None:    
                 plt.ylim(self.ylim)
+            if self.xlim is not None:    
+                plt.xlim(self.xlim)
+            else:
+                plt.xlim([series_x[0],series_x[-1]])    
             if self.xlabel is not None:
                 plt.xlabel(self.xlabel)
             if self.ylabel is not None:
                 plt.ylabel(self.ylabel)
+            if self.legend_pos is not None:
+                self.legend_pos = 'upper center'
             if self.legend_labels is not None:
                 plt.rc('text', usetex=True)
                 plt.rc('font', family='serif')
