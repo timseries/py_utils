@@ -106,7 +106,7 @@ class Metric(Section):
                 fontP = FontProperties()
                 fontP.set_size('small')
                 legend = plt.legend(self.legend_labels,
-                                    loc='upper center',
+                                    loc=self.legend_pos,
                                     # bbox_to_anchor = (1.01, 1.01),
                                     ncol = self.legend_cols,
                                     title = self.title,

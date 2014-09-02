@@ -154,22 +154,23 @@ ii        The other metrics are dealt with separately.
                  for manager in matplotlib._pylab_helpers.Gcf.get_all_fig_managers()]
         int_fig_offset = max(0,len(figures) - 1)
         for metric in self.ls_metrics:
-            #make row offset adjustment
-            metric.figure_location += self.grid_size[0] * self.row_offset
-            metric.w_size = self.resolutions[self.desktop] / self.grid_size
-            int_row_offset = int((metric.figure_location + .1) / self.grid_size[0])
-            int_col_offset = int(mod(metric.figure_location, self.grid_size[0]))
-            metric.w_coords = aa([int_col_offset * metric.w_size[0] + \
-                                  self.desktop * self.resolutions[self.desktop][0], \
-                                  int_row_offset * metric.w_size[1]])
-            #creating the Metrics' figure windows
-            metric.figure_number = int_fig_offset + metric.figure_location
-            metric.figure = plt.figure(metric.figure_number)
-            wm = plt.get_current_fig_manager()
-            wm.window.wm_geometry(str(metric.w_size[0]) + "x" + \
-                                  str(metric.w_size[1]) + "+" + \
-                                  str(metric.w_coords[0]) + "+" + \
-                                  str(metric.w_coords[1]))
+            if metric.plot_enabled:
+                #make row offset adjustment
+                metric.figure_location += self.grid_size[0] * self.row_offset
+                metric.w_size = self.resolutions[self.desktop] / self.grid_size
+                int_row_offset = int((metric.figure_location + .1) / self.grid_size[0])
+                int_col_offset = int(mod(metric.figure_location, self.grid_size[0]))
+                metric.w_coords = aa([int_col_offset * metric.w_size[0] + \
+                                      self.desktop * self.resolutions[self.desktop][0], \
+                                      int_row_offset * metric.w_size[1]])
+                #creating the Metrics' figure windows
+                metric.figure_number = int_fig_offset + metric.figure_location
+                metric.figure = plt.figure(metric.figure_number)
+                wm = plt.get_current_fig_manager()
+                wm.window.wm_geometry(str(metric.w_size[0]) + "x" + \
+                                      str(metric.w_size[1]) + "+" + \
+                                      str(metric.w_coords[0]) + "+" + \
+                                      str(metric.w_coords[1]))
     def clear(self):
         """
         Clear the data out of the metrics 
