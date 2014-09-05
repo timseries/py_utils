@@ -139,9 +139,10 @@ class Observe(Section):
                 DHt = conj(DH)
                 Hty=fftn(D*(~Phi * dict_in['y']))
                 HtDtDH=np.real(DHt*DH)
-                dict_in['x_0'] = ~D*real(ifftn(Hty /
-                                               (HtDtDH + 
-                                                wrf * noise_pars['variance'])))
+                # dict_in['x_0'] = ~D*real(ifftn(Hty /
+                #                                (HtDtDH + 
+                #                                 wrf * noise_pars['variance'])))
+                dict_in['x_0'] = ~D * dict_in['y']
                 #optional interpolation
                 xdim=dict_in['x'].ndim
                 if self.get_val('interpinitialsolution',True) and xdim < 3:

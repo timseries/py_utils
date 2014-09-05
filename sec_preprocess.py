@@ -116,7 +116,8 @@ class Preprocess(Section):
             dict_global_lims['upperlimit'] = self.get_val('phaseupperlimit',True)
             dict_global_lims['boundary_mask'] = dict_in['boundarymask']
             dict_global_lims['boundary_upperlimit'] = self.get_val('boundaryphaseupperlimit',True)
-                
+            # pdb.set_trace()
+            
             theta = phase_unwrap(theta, dict_global_lims, ls_local_lim_secs)
             magnitude /= np.max(nabs(magnitude))
             dict_in['x'] = magnitude*exp(1j*theta)

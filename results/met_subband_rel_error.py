@@ -24,7 +24,7 @@ class SRE(SubbandMetric):
             self.w = dict_in['w'][self.real_imag]
             self.get_legend_info(self.w)
             self.subband_energies = [norm(self.w.get_subband(j).flatten(),2)**2 for j in xrange(self.w.int_subbands)]
-        value = np.array([((norm((self.w.get_subband(j) - dict_in['w_n'][0].get_subband(j)).flatten(),2)**2)/
+        value = np.array([((norm((self.w.get_subband(j) - dict_in['w_n'][self.real_imag].get_subband(j)).flatten(),2)**2)/
                            self.subband_energies[j]) for j in xrange(self.w.int_subbands)])
         super(SRE,self).update(value)
         
