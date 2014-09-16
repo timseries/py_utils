@@ -63,7 +63,7 @@ def spectral_radius(op_transform, op_modality, tup_size, method='spectrum', nitn
         rv = rand(*tup_size)
         rv /= np.linalg.norm(rv,2)
         # rv = nd_impulse(tup_size)
-        ws_rv = op_transform * rand(*tup_size) #random vector (white noise)
+        ws_rv = op_transform * rv #rand(*tup_size) #random vector (white noise)
         ary_eigs = np.zeros(ws_rv.int_subbands)
         #outer loop for the summbands
         for s in xrange(ws_rv.int_subbands):
