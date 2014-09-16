@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 from mpldatacursor import datacursor
 import matplotlib.cm as cm
-from py_utils.results.defaults import DEFAULT_CSV_EXT,DEFAULT_KEY
+from py_utils.results.defaults import DEFAULT_CSV_EXT, DEFAULT_KEY, DEFAULT_EXT
 
 import csv 
 
@@ -37,7 +37,7 @@ class Metric(Section):
         self.title = self.get_val('title',False)
         self.print_enabled = self.get_val('print',True)
         self.plot_enabled = self.get_val('plot',True, True)
-        self.output_format = self.get_val('outputformat',False,'csv')
+        self.output_extension = self.get_val('outputextension', False, DEFAULT_EXT)
         #2 element vector, beginning and end to crop for plotting
         self.crop_plot = maximum(zeros(2),self.get_val('cropplot',True)) 
         self.crop_plot.dtype='uint8'
@@ -70,7 +70,6 @@ class Metric(Section):
             slice_end = self.crop_plot[1]
             if slice_end==0:
                 slice_end = None
-
             sl=slice(slice_start,slice_end)
             datacursor(display='single')
             if self.data[0].__class__.__name__=='ndarray':
@@ -125,14 +124,18 @@ class Metric(Section):
         #empty out the data after the derived class has done the saving
         self.data = []
 
-    def save_csv(self,strPath='/home/outputimage/'):
+    def save_csv(self,strPath='/home/outputimage/',data_override = None):
         '''When the iteration data is saved as a multi-series/array, need to parse and create new columns
         '''
+        if data_override is not None:
+            data = data_override
+        else:
+            data = self.data    
         if len(self.data)==0:
             return
-        int_rows = len(self.data)
-        col_iterator = xrange(len(self.data[0]))
-        table = [[j] + [self.data[j][k] for k in col_iterator] for j in xrange(int_rows)]
+        int_rows = len(data)
+        col_iterator = xrange(len(data[0]))
+        table = [[j] + [data[j][k] for k in col_iterator] for j in xrange(int_rows)]
             #start a new csv file, and save the csv metrics there
         headers = [self.key + str(k) for k in col_iterator] 
         headers.insert(0,'n')

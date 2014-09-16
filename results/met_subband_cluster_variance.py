@@ -30,12 +30,9 @@ class SCV(SubbandMetric):
             self.zeroval = 10E-17
             value = np.array([self.zeroval]*self.ls_S_hat_sup[0].int_subbands)
         else:    
-            minus_w_bar_n = dict_in['w_bar_n'][self.real_imag] * (-1)
-            ls_w_hat_n = dict_in['ls_w_hat_n'][self.real_imag]
-            ls_S_bar_n = [(ls_w_hat_n[j] + minus_w_bar_n) * self.ls_S_hat_sup[j] for j in self.dup_it] #fill in the gaps with w_n
-            ls_S_bar_n = [ls_S_bar_n[j].energy() for j in self.dup_it] #compute the variance from differences
-            S_bar_n = sum([ls_S_bar_n[j] for j in self.dup_it]) / self.cluster_norm
-            value = np.array([self.zeroval]+[np.mean(S_bar_n.get_subband(j)) for j in xrange(1,S_bar_n.int_subbands)])
+
+            w_m_w_bar = dict_in['w_n'][self.real_imag]-dict_in['w_bar_n'][self.real_imag]
+            value = np.array([self.zeroval]+[norm(w_m_w_bar.get_subband(j).flatten(),2)**2 for j in xrange(1,w_m_w_bar.int_subbands)])
         super(SCV,self).update(value)
         
     class Factory:

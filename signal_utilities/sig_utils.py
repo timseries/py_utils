@@ -18,7 +18,7 @@ def nd_impulse(ary_size):
     ary_impulse[tuple(array(ary_impulse.shape)/2)] = 1
     return ary_impulse
 
-def spectral_radius(op_transform, op_modality, tup_size, method='spectrum'):
+def spectral_radius(op_transform, op_modality, tup_size, method='spectrum', nitn_pi=30, use_unit_norm=False):
     """Compute the specral radius (the dominant eigenvalues) of the composition of op_transform and op_modality.
     :param op_transform: a transform operator which returns a ws object
     :param op_modality: some linear operator, 
@@ -59,27 +59,39 @@ def spectral_radius(op_transform, op_modality, tup_size, method='spectrum'):
         
     elif method=='power_iteration':
         W = op_transform
-        Phi = op_modality
+        A = op_modality
+        rv = rand(*tup_size)
+        rv /= np.linalg.norm(rv,2)
+        # rv = nd_impulse(tup_size)
         ws_rv = op_transform * rand(*tup_size) #random vector (white noise)
         ary_eigs = np.zeros(ws_rv.int_subbands)
+        #outer loop for the summbands
         for s in xrange(ws_rv.int_subbands):
             ws_ss = ws_rv.one_subband(s)
+            # ws_ss = ws_rv
             i = 0
-            while i < 30:
-                ws_ss = A(W,Phi,ws_ss) #to image domain
-                ws_ss = At(W,Phi,ws_ss) #back to wavelet domain
+            while i < nitn_pi:
+                #w_k computation
+                ws_ss = Phi(W,A,ws_ss) #to image domain
+                ws_ss = Phi_t(W,A,ws_ss) #back to wavelet domain
+                ws_ss = ws_ss.one_subband(s)    
                 ws_ss_norm = norm(ws_ss.flatten(lgc_real=True),2)
                 ws_ss /= ws_ss_norm
-                ws_ss = ws_ss.one_subband(s)    
+                # print norm(ws_ss.flatten(lgc_real=True),2)
+                #w_k computation now complete
                 i += 1    
-            AtAws_ss = A(W,Phi,ws_ss)
-            AtAws_ss = At(W,Phi,AtAws_ss).flatten(lgc_real=True)
+            PhitPhiws_ss = Phi(W,A,ws_ss)
+            PhitPhiws_ss = Phi_t(W,A,PhitPhiws_ss).one_subband(s).flatten()
             # print np.sum(ws_ss.flatten(lgc_real=True).transpose() * AtAws_ss)
             # print ws_ss_norm
-            ary_eigs[s] = np.sum(ws_ss.flatten(lgc_real=True).transpose() * AtAws_ss) / ws_ss_norm
+            # ary_eigs[s] = np.real(np.dot(conj(ws_ss.flatten().transpose()), PhitPhiws_ss) / ws_ss_norm)
+            wtw = np.real(np.dot(conj(ws_ss.flatten().transpose()),ws_ss.flatten()))
+            print wtw
+            ary_eigs[s] = np.real(np.dot(conj(ws_ss.flatten().transpose()), PhitPhiws_ss) / wtw)
             print 'computing subband weight ' + str(s) + ' using poweriteration'
             print ary_eigs
-        ary_alpha = np.minimum(ary_eigs,1.0)
+        ary_alpha = ary_eigs  
+        # ary_alpha = np.minimum(ary_eigs,1.0)
     else:
         raise ValueError('method ' + method + ' unsupported')
                 
@@ -87,10 +99,10 @@ def spectral_radius(op_transform, op_modality, tup_size, method='spectrum'):
     return ary_alpha
 
 
-def A(op_transform,op_modality,mcand):
+def Phi(op_transform,op_modality,mcand):
     return op_modality * (~op_transform * mcand)
 
-def At(op_transform,op_modality,mcand):
+def Phi_t(op_transform,op_modality,mcand):
     return op_transform * (~op_modality * mcand)
 
 
