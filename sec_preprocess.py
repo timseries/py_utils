@@ -69,7 +69,7 @@ class Preprocess(Section):
                 
             if bmask_sec_in:    
                 sec_bmask_in = sf.create_section(self.get_params(),bmask_sec_in)
-                dict_in['boundarymask'] = ~np.asarray(sec_bmask_in.read(dict_in, True), dtype='bool')
+                dict_in['boundarymask'] = np.asarray(sec_bmask_in.read(dict_in, True), dtype='bool')
             else:
                 dict_in['boundarymask'] = False
 
@@ -116,7 +116,6 @@ class Preprocess(Section):
             dict_global_lims['upperlimit'] = self.get_val('phaseupperlimit',True)
             dict_global_lims['boundary_mask'] = dict_in['boundarymask']
             dict_global_lims['boundary_upperlimit'] = self.get_val('boundaryphaseupperlimit',True)
-            # pdb.set_trace()
             
             theta = phase_unwrap(theta, dict_global_lims, ls_local_lim_secs)
             magnitude /= np.max(nabs(magnitude))

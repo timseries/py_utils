@@ -871,7 +871,6 @@ def phase_unwrap(phase, dict_global_lims, ls_local_lims):
     #apply the optional boundary phase correction to all boundaries, except where the local
     #corrections have already taken place
 
-    #THIS STEP IS CAUSING PROBLEMS
     if (dict_global_lims.has_key('boundary_mask') and 
         dict_global_lims.has_key('boundary_upperlimit')):
         phase[~local_mask*dict_global_lims['boundary_mask'] * 

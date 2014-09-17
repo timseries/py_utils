@@ -62,6 +62,7 @@ class Metric(Section):
         if self.xlabel is None:
             self.xlabel = r'Iteration'
         self.legend_cols = 1
+        self.save_key = None
             
     def plot(self):
         if self.plot_enabled:
@@ -124,8 +125,9 @@ class Metric(Section):
         #empty out the data after the derived class has done the saving
         self.data = []
 
-    def save_csv(self,strPath='/home/outputimage/',data_override = None):
+    def save_csv(self,strPath='/home/outputimage/',data_override = None,col_iterator_override = None):
         '''When the iteration data is saved as a multi-series/array, need to parse and create new columns
+        col_iterator_override can be any iterable to provide column names, otherwise column indices are used
         '''
         if data_override is not None:
             data = data_override
@@ -135,9 +137,11 @@ class Metric(Section):
             return
         int_rows = len(data)
         col_iterator = xrange(len(data[0]))
-        table = [[j] + [data[j][k] for k in col_iterator] for j in xrange(int_rows)]
+        if col_iterator_override is not None:
+            col_iterator = col_iterator_override
+        table = [[j] + [data[j][k] for k,name in enumerate(col_iterator)] for j in xrange(int_rows)]
             #start a new csv file, and save the csv metrics there
-        headers = [self.key + str(k) for k in col_iterator] 
+        headers = [self.key + str(k) for k in col_iterator]
         headers.insert(0,'n')
         with open(strPath + '.' + DEFAULT_CSV_EXT, 'w') as csvfile:
             writer = csv.writer(csvfile)

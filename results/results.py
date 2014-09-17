@@ -132,7 +132,10 @@ ii        The other metrics are dealt with separately.
         metric.save(self.get_metric_path(metric))
 
     def get_metric_path(self,metric):
-        return self.output_directory + self.output_filename + '_' + metric.key
+        save_key = metric.key
+        if metric.save_key is not None:
+            save_key = metric.save_key
+        return self.output_directory + self.output_filename + '_' + save_key
 
     def csv_cell(self,metric_datum):
         '''convert metric_datum into an acceptable format for a csv cell
@@ -187,7 +190,8 @@ ii        The other metrics are dealt with separately.
         """     
         if self.display_enabled:
             for metric in self.ls_metrics:
-                metric.plot()
+                if metric.plot_enabled:
+                    metric.plot()
             plt.show()
         else:
             print 'no display enabled'

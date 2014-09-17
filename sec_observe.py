@@ -197,8 +197,10 @@ class Observe(Section):
             dict_in['x_0'] = (~Fu) * dict_in['y']
             dict_in['theta_0'] = angle(dict_in['x_0'])
             dict_in['theta_0'] = su.phase_unwrap(dict_in['theta_0'],dict_in['dict_global_lims'],dict_in['ls_local_lim_secs'])
-            dict_in['theta_0'] *= dict_in['mask']
-            dict_in['magnitude_0'] = nabs(dict_in['x_0']) #*dict_in['mask'] #uncomment this for 'total' masking
+            dict_in['magnitude_0'] = nabs(dict_in['x_0'])
+            if self.get_val('maskinitialsoln',True):
+                dict_in['theta_0'] *= dict_in['mask']
+                dict_in['magnitude_0'] *= dict_in['mask'] 
             dict_in['x_0'] = dict_in['magnitude_0']*exp(1j*dict_in['theta_0'])
             self.compute_bsnr(dict_in,noise_pars)
         #store the wavelet domain version of the ground truth

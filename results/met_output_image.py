@@ -6,6 +6,7 @@ import png
 from PIL import Image
 from mpldatacursor import datacursor
 import os
+import copy
 
 from py_utils.results.metric import Metric
 from py_utils.results.defaults import DEFAULT_SLICE,DEFAULT_IMAGE_EXT
@@ -31,13 +32,26 @@ class OutputImage(Metric):
         self.output_extension = self.get_val('outputextension', False, DEFAULT_IMAGE_EXT)
         #just the last 'frame' of image data, where frames are indexed by iteration, for legacy support (superceded by .update_once)
         self.last_frame_only = self.get_val('lastframeonly',True) 
+        self.mask_color = self.get_val('maskcolor',True) #3-element rgb array 
+        self.mask_key = self.get_val('maskkey',False) #supplies the same-sized array-- wherethe mask vals are
         self.im_range_key = self.get_val('imrangekey',False) 
         if not self.im_range_key:
             self.im_range_key = 'x'
         self.print_values = 0 #we never want to print array data...
         self.has_csv = False #we can't save these to csv format like other metrics
         self.cmap = self.get_val('colormap',False,'gray')
-        
+        self.cmap = copy.copy(plt.cm.get_cmap(self.cmap)) #arbitrary cmap
+        #mask related code
+        self.mask = None
+        if self.mask_key !='':
+            if self.mask_color.__class__.__name__ != 'ndarray': #assume 0 value here
+                self.mask_color = np.array([0.0, 0.0, 0.0, 1.0])
+            else:
+                self.mask_color = np.hstack((self.mask_color, 1.0))
+            self.cmap._init()
+            self.cmap._lut[-1,:] = self.mask_color
+            self.save_key = self.key + '_maskedby_' + self.mask_key #dont overwrite the original unmasked data
+            
     def update(self,dict_in):
         """Takes a 2D or 3D image or volume . If a volume, display the :attr:`self.slice` if specified, otherwise display volume using Myavi. Aggregate images/slices into a volume to view the reconstruction later, or save volumes
         :param dict_in: Input dictionary which contains the referenece to the image/volume data to display and record. 
@@ -55,12 +69,18 @@ class OutputImage(Metric):
                 im_range_key=self.im_range_key
             self.input_range = np.asarray([np.min(dict_in[im_range_key]),
                                            np.max(dict_in[im_range_key])])
-        super(OutputImage,self).update(value[self.slices])
+            if self.mask_key != '' and self.mask_key in dict_in:
+                self.mask = dict_in[self.mask_key][self.slices] == 0 #need to flip the 0's to 1's (invalid)
+        update_val = value[self.slices]
+        if self.mask is not None: #add a mask channel
+            update_val = np.ma.array(update_val, mask = self.mask)
+        super(OutputImage,self).update(update_val)
 
     def plot(self):
         if self.data[-1].ndim==2:
             plt.figure(self.figure_number)
-            plt.imshow(self.data[-1][self.slices],cmap=self.cmap)
+            plt.imshow(self.data[-1][self.slices],cmap=self.cmap, 
+                       vmin=self.input_range[0],vmax=self.input_range[1])#,interpolation="none")
             if self.get_val('colorbar',True):
                 cb = plt.colorbar()
                 # cb.set_clim(self.input_range[0],self.input_range[1])
@@ -99,6 +119,9 @@ class OutputImage(Metric):
                 write_data+=np.abs(self.input_range[0])
             #double precision is memory consumptive
             write_data=np.asarray(write_data,dtype='float32')
+            #add masking information - do this last
+            if self.mask is not None: #add a mask channel
+                write_data = np.ma.array(write_data, mask = self.mask,dtype='float32')
             if self.output_extension=='png':
                 write_data/=np.max(write_data)
                 write_data*=255
@@ -111,7 +134,7 @@ class OutputImage(Metric):
                 ax = plt.Axes(fig,[0,0,1,1])
                 ax.set_axis_off()
                 fig.add_axes(ax)
-                img = ax.imshow(write_data,cmap=self.cmap)
+                img = ax.imshow(write_data,cmap=self.cmap,vmin=self.input_range[0],vmax=self.input_range[1], interpolation="none")
                 ax.set_xticklabels([])
                 ax.set_xticks([])
                 ax.set_yticklabels([])
@@ -132,6 +155,26 @@ class OutputImage(Metric):
                 else:
                     raise ValueError('unsupported # of dims in output.write_image tif')
                 output.close()
+            elif self.output_extension=='csv':
+                #2d matrix to a csv file with columns  row0....rowN...col0...colN
+                col_iterator = []
+                rows = write_data.shape[0]
+                cols = write_data.shape[1]
+                max_dim = 2*max(rows,cols)
+                table=np.zeros([max_dim,max_dim])
+                if self.mask is not None: #add a mask channel
+                    write_data = write_data.mask * write_data.data
+                #do the rows first
+                col_ix = 0
+                for j in np.arange(rows):
+                    table[col_ix,0:cols] = write_data[j,:]
+                    col_ix+=1
+                    col_iterator.append('row'+str(j))
+                for j in np.arange(cols):
+                    table[col_ix,0:rows] = write_data[:,j]
+                    col_ix+=1
+                    col_iterator.append('col'+str(j))               
+                self.save_csv(strSavePath[0:-4],data_override=table,col_iterator_override=col_iterator)
             else:
                 raise ValueError('unsupported extension')
         super(OutputImage,self).save()
