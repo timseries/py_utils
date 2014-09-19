@@ -160,21 +160,24 @@ class OutputImage(Metric):
                 col_iterator = []
                 rows = write_data.shape[0]
                 cols = write_data.shape[1]
-                max_dim = 2*max(rows,cols)
-                table=np.zeros([max_dim,max_dim])
+                max_dim = max(rows,cols)
+                table=np.zeros([max_dim,rows+cols])
                 if self.mask is not None: #add a mask channel
-                    write_data = write_data.mask * write_data.data
+                    write_data = ~write_data.mask * write_data.data
                 #do the rows first
                 col_ix = 0
                 for j in np.arange(rows):
-                    table[col_ix,0:cols] = write_data[j,:]
+                    table[0:cols,col_ix] = write_data[j,:]
                     col_ix+=1
                     col_iterator.append('row'+str(j))
                 for j in np.arange(cols):
-                    table[col_ix,0:rows] = write_data[:,j]
+                    table[0:rows,col_ix] = write_data[:,j]
                     col_ix+=1
-                    col_iterator.append('col'+str(j))               
-                self.save_csv(strSavePath[0:-4],data_override=table,col_iterator_override=col_iterator)
+                    col_iterator.append('col'+str(j))              
+                #round to save memory
+                # table = np.around(table,decimals=4) 
+                # pdb.set_trace()
+                self.save_csv(strSavePath[0:-4],data_override=table,col_iterator_override=col_iterator,precision=4)
             else:
                 raise ValueError('unsupported extension')
         super(OutputImage,self).save()

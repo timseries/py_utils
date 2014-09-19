@@ -125,7 +125,7 @@ class Metric(Section):
         #empty out the data after the derived class has done the saving
         self.data = []
 
-    def save_csv(self,strPath='/home/outputimage/',data_override = None,col_iterator_override = None):
+    def save_csv(self,strPath='/home/outputimage/',data_override = None,col_iterator_override = None, precision=None):
         '''When the iteration data is saved as a multi-series/array, need to parse and create new columns
         col_iterator_override can be any iterable to provide column names, otherwise column indices are used
         '''
@@ -144,10 +144,15 @@ class Metric(Section):
         headers = [self.key + str(k) for k in col_iterator]
         headers.insert(0,'n')
         with open(strPath + '.' + DEFAULT_CSV_EXT, 'w') as csvfile:
-            writer = csv.writer(csvfile)
+            writer = csv.writer(csvfile, quoting=csv.QUOTE_NONE)
             writer.writerow(headers)
-            writer.writerows(table)
-        
+            if precision is None:
+                writer.writerows(table)
+            else:
+                fmt_string = '{:1.'+str(int(precision))+'}'
+                for row in table:
+                    # writer.writerow(['{:3.4e}'.format(x) for x in i])
+                    writer.writerow(['{:1.4}'.format(el) if ix >0 else el for ix,el in enumerate(row)])
     class Factory:
         def create(self,ps_parameters,str_section):
             return Metric(ps_parameters,str_section)
