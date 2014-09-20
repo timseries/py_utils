@@ -877,3 +877,36 @@ def phase_unwrap(phase, dict_global_lims, ls_local_lims):
               (phase > dict_global_lims['boundary_upperlimit'])] -= 2*pi
         
     return phase
+
+
+def colorize(z):
+    r = np.abs(z)
+    arg = np.angle(z) 
+
+    h = (arg + pi)  / (2 * pi) + 0.5
+    l = 1.0 - 1.0/(1.0 + r**0.3)
+    s = 0.8
+
+    c = np.vectorize(hls_to_rgb) (h,l,s) # --> tuple
+    c = np.array(c)  # -->  array of (3,n,m) shape, but need (n,m,3)
+    c = c.swapaxes(0,2) 
+    return c
+
+def cimage5(x, xsat=None, i0=0.9, i1=1.0):
+    xmax = np.max(np.abs(x))
+    if xsat is None or xsat < 0:
+        xsat = xmax
+    x /= xsat
+    xabs = np.abs(x)
+    xabs[xabs<1] = 1
+    x /= xabs
+
+    #calculate the rgb
+    ax = (i0 - 0.5*i1) * (1 - np.abs(x))
+    cx = np.zeros(np.hstack((x.shape,3)))
+    cx[...,0] = (0.5 * i1) * (np.real(x) + 1) + ax
+    cx[...,1] = (0.25 * i1) * (2 - np.real(x) + np.imag(x)) + ax
+    cx[...,2] = (0.5 * i1) * (1 - np.imag(x)) + ax
+    cx[cx>1] = 1
+    cx[cx<0] = 0.0
+    return cx

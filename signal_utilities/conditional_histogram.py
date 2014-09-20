@@ -44,10 +44,12 @@ def compute_conditional_histogram(dep_array, indep_array, **kwargs):
     dep_bin_width = (dep_max-dep_min)/(dep_bins)
     # indep_bin_range = np.arange(indep_min, indep_max, indep_bin_width)
     # dep_bin_range = np.arange(dep_min, dep_max, dep_bin_width)
-    indep_bin_range = np.linspace(indep_min, indep_max, num=indep_bins,endpoint=False)
-    dep_bin_range = np.linspace(dep_min, dep_max, num=dep_bins,endpoint=False)
-    # indep_bin_range = np.logspace(np.log10(indep_min), np.log10(indep_max), num=indep_bins,endpoint=False)
-    # dep_bin_range = np.logspace(np.log10(dep_min), np.log10(dep_max), num=dep_bins,endpoint=False)
+    if 'log_scaling' in kwargs:
+        indep_bin_range = np.logspace(np.log10(indep_min), np.log10(indep_max), num=indep_bins,endpoint=False)
+        dep_bin_range = np.logspace(np.log10(dep_min), np.log10(dep_max), num=dep_bins,endpoint=False)
+    else:
+        indep_bin_range = np.linspace(indep_min, indep_max, num=indep_bins,endpoint=False)
+        dep_bin_range = np.linspace(dep_min, dep_max, num=dep_bins,endpoint=False)
 
     print len(indep_bin_range)
     print len(dep_bin_range)    
