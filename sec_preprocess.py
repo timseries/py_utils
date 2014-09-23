@@ -37,14 +37,23 @@ class Preprocess(Section):
         #build the preprocessing parameters
         if (self.str_type == 'brainwebmri'):
             #need to pad/crop the input data for wavelet processing
+            swap_axes = self.get_val('swapaxes', True)
+            if swap_axes.__class__.__name__ == 'ndarray':
+                dict_in['x'] = dict_in['x'].swapaxes(swap_axes[0],swap_axes[1])
             input_shape = dict_in['x'].shape
-            new_shape = self.get_val('cropsize', True)
+            
+            #cropping
+            new_shape = self.get_val('newshape', True)
             if new_shape.__class__.__name__ == 'ndarray':
                 new_shape = tuple(new_shape)
-                dict_in['x'] = crop_center(dict_in['x'], new_shape)
-            else:
-                new_shape = 2 ** np.ceil(np.log2(input_shape))
-                dict_in['x'] = pad_center(dict_in['x'], new_shape)
+            #figure out what to crop, if anything
+            if np.any(new_shape<input_shape):
+                crop_shape = np.min(np.vstack((new_shape,input_shape)),axis=0)
+                dict_in['x'] = crop_center(dict_in['x'], crop_shape)
+            #padding    
+            if np.any(new_shape>crop_shape):
+                pad_shape = np.max(np.vstack((new_shape,crop_shape)),axis=0)
+                dict_in['x'] = pad_center(dict_in['x'], pad_shape)
         elif (self.str_type == 'phasevelocity'):
             mask_sec_in = self.get_val('masksectioninput',False)
             bmask_sec_in = self.get_val('boundarymasksectioninput',False)

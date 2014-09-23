@@ -22,11 +22,12 @@ class PSNR(Metric):
         Expects a single value or array. If array, store the whole vector and stop.
         """
         if self.data == []:
+            self.xshape = dict_in['x'].shape
             self.x = dict_in['x'].flatten()
             if self.peak == 0:
                 self.peak = nmax(self.x)
-        if dict_in['x_n'].shape != self.x.shape:
-            x_n = crop_center(dict_in['x_n'],dict_in['x'].shape).flatten()
+        if dict_in['x_n'].shape != self.xshape:
+            x_n = crop_center(dict_in['x_n'],self.xshape).flatten()
         else:
             x_n = dict_in['x_n'].flatten()
         mse = mean((x_n - self.x)**2)

@@ -57,40 +57,48 @@ def spectral_radius(op_transform, op_modality, tup_size, method='spectrum', nitn
         #return the alpha array, upper-bounded to 1                      
         ary_alpha = np.minimum(ary_alpha,1.0)
         
-    elif method=='power_iteration':
+    elif method[:5]=='power':
         W = op_transform
         A = op_modality
         rv = rand(*tup_size)
-        rv /= np.linalg.norm(rv,2)
+        rv /= np.linalg.norm(rv.flatten(),2)
         # rv = nd_impulse(tup_size)
         ws_rv = op_transform * rv #rand(*tup_size) #random vector (white noise)
-        ary_eigs = np.zeros(ws_rv.int_subbands)
+        ary_eigs = np.zeros((ws_rv.int_subbands,ws_rv.int_subbands))
         #outer loop for the summbands
         for s in xrange(ws_rv.int_subbands):
-            ws_ss = ws_rv.one_subband(s)
+            #we do crossband summation if _cb option is used
+            if method == 'power_iteration_cb':
+                cb_iterator = xrange(s,ws_rv.int_subbands)
+            else:
+                cb_iterator = xrange(s,s+1)
             # ws_ss = ws_rv
-            i = 0
-            while i < nitn_pi:
-                #w_k computation
-                ws_ss = Phi(W,A,ws_ss) #to image domain
-                ws_ss = Phi_t(W,A,ws_ss) #back to wavelet domain
-                ws_ss = ws_ss.one_subband(s)    
-                ws_ss_norm = norm(ws_ss.flatten(lgc_real=True),2)
-                ws_ss /= ws_ss_norm
-                # print norm(ws_ss.flatten(lgc_real=True),2)
-                #w_k computation now complete
-                i += 1    
-            PhitPhiws_ss = Phi(W,A,ws_ss)
-            PhitPhiws_ss = Phi_t(W,A,PhitPhiws_ss).one_subband(s).flatten()
+            for s_cb in cb_iterator:
+                ws_ss = ws_rv.one_subband(s)
+                i = 0
+                break_opt = 0
+                while i < nitn_pi and not break_opt:
+                    #w_k computation
+                    ws_ss = Phi(W,A,ws_ss.one_subband(s)) #to image domain
+                    ws_ss = Phi_t(W,A,ws_ss).one_subband(s_cb)     #back to wavelet domain
+                    ws_ss_norm = norm(ws_ss.flatten(lgc_real=True),2)
+                    # print ws_ss_norm
+                    if ws_ss_norm<1E-6:
+                        break_opt = 1
+                    else:    
+                        ws_ss /= ws_ss_norm
+                    i += 1    
+                if not break_opt:
+                    PhitPhiws_ss = Phi(W,A,ws_ss.one_subband(s))
+                    PhitPhiws_ss = Phi_t(W,A,PhitPhiws_ss).one_subband(s_cb).flatten()
             # print np.sum(ws_ss.flatten(lgc_real=True).transpose() * AtAws_ss)
             # print ws_ss_norm
             # ary_eigs[s] = np.real(np.dot(conj(ws_ss.flatten().transpose()), PhitPhiws_ss) / ws_ss_norm)
-            wtw = np.real(np.dot(conj(ws_ss.flatten().transpose()),ws_ss.flatten()))
-            print wtw
-            ary_eigs[s] = np.real(np.dot(conj(ws_ss.flatten().transpose()), PhitPhiws_ss) / wtw)
+                    wtw = np.real(np.dot(conj(ws_ss.flatten().transpose()),ws_ss.flatten()))
+                    ary_eigs[s,s_cb] = np.real(np.dot(conj(ws_ss.flatten().transpose()), PhitPhiws_ss) / wtw)
             print 'computing subband weight ' + str(s) + ' using poweriteration'
             print ary_eigs
-        ary_alpha = ary_eigs  
+        ary_alpha = np.sum(ary_eigs, axis=0)
         # ary_alpha = np.minimum(ary_eigs,1.0)
     else:
         raise ValueError('method ' + method + ' unsupported')
@@ -202,14 +210,14 @@ def pad_center(ary_input, tup_new_size):
     """
     Returns a new array of size tup_new_size with ary_input in the center
     """
-    if ((ary_input.shape > tup_new_size) or 
+    if (np.any(ary_input.shape > tup_new_size) or 
         (ary_input.ndim != len(tup_new_size))): #one of the dimensions is too big
         raise ValueError('cannot pad ary_input using new shape ' + 
                          str(tup_new_size) + ', input shape is ' + 
                          ary_input.shape)
     else: #inputs are OK
-        pad_sz=(np.array(tup_new_size)-np.array(ary_input.shape))/2
-        ls_pad_size_axis=[(pad_sz[j],pad_sz[j]) for j in xrange(pad_sz.size)]
+        pad_sz=(np.array(tup_new_size)-np.array(ary_input.shape))/2.0
+        ls_pad_size_axis=[(int(np.ceil(pad_sz[j])),int(np.floor(pad_sz[j]))) for j in xrange(pad_sz.size)]
         return np.pad(ary_input,ls_pad_size_axis,mode='constant',constant_values=0)
 
 def get_neighborhoods(ary_input,n_size):

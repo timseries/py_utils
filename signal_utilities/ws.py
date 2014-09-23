@@ -56,6 +56,16 @@ class WS(object):
                         4: -45,
                         5: -15
                         }.get(int_orientation, 15)
+                elif self.int_orientations==28:
+                    int_orientation = {
+                        0: 15,
+                        1: 45,
+                        2: 75,
+                        3: -75,
+                        4: -45,
+                        5: -15
+                        }.get(int_orientation, 15)
+
         return int_level, int_orientation
     
     def one_subband(self,int_subband_index):

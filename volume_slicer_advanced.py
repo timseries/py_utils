@@ -68,6 +68,7 @@ class VolumeSlicer(HasTraits):
         ipw = mlab.pipeline.image_plane_widget(self.data_src,
                         figure=self.scene3d.mayavi_scene,
                         colormap='gray',
+                        opacity = 0, #TDR added this to get rid of annoying axes
                         plane_orientation='%s_axes' % axis_name,
                         name='Cut %s' % axis_name)
         return ipw
@@ -89,9 +90,11 @@ class VolumeSlicer(HasTraits):
     def display_scene3d(self):
         outline = mlab.pipeline.outline(self.data_src,
                                         colormap = 'gray',
+                                        opacity = 0,
                         figure=self.scene3d.mayavi_scene,
                         )
-        self.scene3d.mlab.view(40, 50)
+        # self.scene3d.mlab.view(40, 50)
+        self.scene3d.mlab.view(-30, -50)
         # Interaction properties can only be changed after the scene
         # has been created, and thus the interactor exists
         for ipw in (self.ipw_3d_x, self.ipw_3d_y, self.ipw_3d_z):
@@ -121,6 +124,7 @@ class VolumeSlicer(HasTraits):
                             vmax=self.data.max(),
                             figure=scene.mayavi_scene,
                             name='Cut view %s' % axis_name,
+                            # name='',
                             )
         setattr(self, 'ipw_%s' % axis_name, ipw)
 
@@ -135,6 +139,8 @@ class VolumeSlicer(HasTraits):
         cursor = mlab.points3d(x, y, z,
                             mode='axes',
                             color=(0, 0, 0),
+                            opacity = 0,
+                            # mode = '2ddash',
                             scale_factor=2*max(self.data.shape),
                             figure=scene.mayavi_scene,
                             name='Cursor view %s' % axis_name,
@@ -166,7 +172,7 @@ class VolumeSlicer(HasTraits):
         scene.scene.background = (0, 0, 0)
 
         # Some text:
-        mlab.text(0.01, 0.8, axis_name, width=0.08)
+        mlab.text(0.01, 0.8, axis_name, width=0.02)
 
         # Choose a view that makes sens
         views = dict(x=(0, 0), y=(90, 180), z=(0, 0))
