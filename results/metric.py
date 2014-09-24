@@ -63,6 +63,7 @@ class Metric(Section):
             self.xlabel = r'Iteration'
         self.legend_cols = 1
         self.save_key = None
+        self.last_frame_only = False
             
     def plot(self):
         if self.plot_enabled:
@@ -115,7 +116,10 @@ class Metric(Section):
         
     def update(self, value=None):
         if value is not None and self.update_enabled:
-            self.data.append(value)
+            if self.last_frame_only:
+                self.data = [value]
+            else:
+                self.data.append(value)
             if self.update_once:
                 self.update_enabled=False    
         if self.print_enabled:

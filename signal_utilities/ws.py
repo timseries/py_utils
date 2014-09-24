@@ -57,14 +57,15 @@ class WS(object):
                         5: -15
                         }.get(int_orientation, 15)
                 elif self.int_orientations==28:
-                    int_orientation = {
-                        0: 15,
-                        1: 45,
-                        2: 75,
-                        3: -75,
-                        4: -45,
-                        5: -15
-                        }.get(int_orientation, 15)
+                    int_orientation = int_orientation #figure out what theta and phi are later
+                    # int_orientation = {
+                    #     0: 15,
+                    #     1: 45,
+                    #     2: 75,
+                    #     3: -75,
+                    #     4: -45,
+                    #     5: -15
+                    #     }.get(int_orientation, 15)
 
         return int_level, int_orientation
     

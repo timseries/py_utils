@@ -5,6 +5,8 @@ from py_utils.results.metric import Metric
 from py_utils.signal_utilities.sig_utils import noise_gen, crop_center
 from py_utils.section_factory import SectionFactory as sf
 
+import pdb
+
 class ISNR(Metric):
     """
     Base class for defining a metric
@@ -36,6 +38,7 @@ class ISNR(Metric):
                 self.x = (self.transform * dict_in['x']).flatten()
             else:
                 if dict_in[self.y_key].shape != dict_in['x'].shape:
+                    pdb.set_trace()
                     self.x = crop_center(dict_in['x'],dict_in['y'].shape).flatten()
                 else:
                     self.x = dict_in['x'].flatten()
