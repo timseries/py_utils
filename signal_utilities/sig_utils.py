@@ -1,9 +1,9 @@
 #!/usr/bin/python -tt
 from operator import add
 import numpy as np
-from numpy import max as nmax, absolute, conj, arange, zeros, array, median, pad, pi
+from numpy import max as nmax, absolute, conj, arange, zeros, array, median, pad, pi, diag
 from numpy.fft import fftn, ifftn
-from numpy.linalg import norm, inv
+from numpy.linalg import norm, inv, eig
 from numpy.random import normal, rand, seed, poisson
 from scipy.stats.mstats import mode
 from scipy.sparse import csr_matrix
@@ -33,6 +33,39 @@ def spectral_radius(op_transform, op_modality, tup_size, method='spectrum', nitn
         ary_impulse = nd_impulse(tup_size)
         ws_w = op_transform * ary_impulse
         ary_alpha = np.ones(ws_w.int_subbands,)
+        
+    elif method=='hermetian':
+        K=nitn_pi
+        # theta_k=[np.dot(np.transpose(Hconv),Hconv)]
+        K=3
+        tup_size = (64,64)
+        ary_impulse = nd_impulse(tup_size)
+        ary_temp = op_modality *  ary_impulse #unused result, just initializing H to correct size in FFTn
+        ary_ms = op_modality.get_spectrum().flatten()
+        HtH=conj(ary_ms)*ary_ms
+        theta_k=[ifftn(diag(HtH))]
+        ws_w = op_transform * ary_impulse
+        ary_subbands = arange(ws_w.int_subbands)
+        ary_alpha = zeros(ws_w.int_subbands,)
+        ary_ss = zeros([ary_ms.shape[0], ws_w.int_subbands],dtype='complex64')
+        for s in ary_subbands:
+            ary_ss[:,s] = fftn(~op_transform * ws_w.one_subband(s)).flatten()
+        for k in arange(0,K):
+            resid = 0
+            for s in ary_subbands:
+                resid += diag(conj(ary_ss[:,s])) * fftn(theta_k[k]) * diag(ary_ss[:,s])
+                # resid = np.real(resid)
+            resid = theta_k[k] - ifftn(resid)
+            #apply the P+ operator
+            resid = np.real(resid)
+            [vals,vecs]=eig(resid)
+            vals[vals<0] = 0
+            theta_k.append(np.dot(np.dot(vecs,diag(vals)),np.linalg.inv(vecs)))
+
+        theta_k_sum=np.sum(np.array(theta_k),axis=0)    
+        for s in ary_subbands:
+            ary_alpha = min(nmax(np.abs(np.diag(conj(ary_ms)) * fftn(theta_k_sum) * np.diag(ary_ss[:,s]))),1)
+
         
     elif method=='spectrum':
         ary_impulse = nd_impulse(tup_size)
@@ -97,7 +130,7 @@ def spectral_radius(op_transform, op_modality, tup_size, method='spectrum', nitn
                     wtw = np.real(np.dot(conj(ws_ss.flatten().transpose()),ws_ss.flatten()))
                     ary_eigs[s,s_cb] = np.real(np.dot(conj(ws_ss.flatten().transpose()), PhitPhiws_ss) / wtw)
             print 'computing subband weight ' + str(s) + ' using poweriteration'
-            print ary_eigs
+            # print ary_eigs
         ary_alpha = np.sum(ary_eigs, axis=0)
         # ary_alpha = np.minimum(ary_eigs,1.0)
     else:
