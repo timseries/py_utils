@@ -148,24 +148,27 @@ class Observe(Section):
                 dict_in['x_0'] = ~D * dict_in['y']
                 #optional interpolation
                 xdim=dict_in['x'].ndim
+                xshp=dict_in['x'].shape
                 if self.get_val('interpinitialsolution',True):
-                    xshp=dict_in['x'].shape
-                    grids=np.mgrid[[slice(0,xshp[j]) for j in xrange(xdim)]]
-                    grids = tuple([grids[i] for i in xrange(grids.shape[0])])
-                    sampled_coords = np.mgrid[[slice(D.offset[j],xshp[j],D.ds_factor[j]) 
-                                               for j in xrange(xdim)]]
-                    values = dict_in['x_0'][[coord.flatten() for coord in sampled_coords]]
-                    points = np.vstack([sampled_coords[i, Ellipsis].flatten() 
-                                        for i in xrange(sampled_coords.shape[0])]).transpose() #pts to interp
-                    if xdim == 2:
-                        interp_vals = griddata(points,values,grids,method='cubic',fill_value=0.0)
-                    elif xdim == 3:
-                        values = dict_in['y'] #we're not using blank values, different interpolation scheme..
-                        interp_coords = iprod(*[np.arange(0,values.shape[j],
-                                                          1.0/D.ds_factor[j]) for j in xrange(values.ndim)])
-                        interp_coords = np.array([el for el in interp_coords]).transpose()
-                        interp_vals = map_coordinates(values,interp_coords,order=3).reshape(xshp)
+                #     grids=np.mgrid[[slice(0,xshp[j]) for j in xrange(xdim)]]
+                #     grids = tuple([grids[i] for i in xrange(grids.shape[0])])
+                #     sampled_coords = np.mgrid[[slice(D.offset[j],xshp[j],D.ds_factor[j]) 
+                #                                for j in xrange(xdim)]]
+                #     values = dict_in['x_0'][[coord.flatten() for coord in sampled_coords]]
+                #     points = np.vstack([sampled_coords[i, Ellipsis].flatten() 
+                #                         for i in xrange(sampled_coords.shape[0])]).transpose() #pts to interp
+                #     if xdim == 2:
+                #         interp_vals = griddata(points,values,grids,method='cubic',fill_value=0.0)
+                    values = dict_in['y'] #we're not using blank values, different interpolation scheme..
+                    interp_coords = iprod(*[np.arange(0,values.shape[j],
+                                                      1.0/D.ds_factor[j]) for j in xrange(values.ndim)])
+                    # pdb.set_trace()
+                    interp_coords = np.array([el for el in interp_coords]).transpose()
+                    interp_vals = map_coordinates(values,interp_coords,order=3,mode='nearest').reshape(xshp)
                         #cut off the edges
+                    if xdim == 2:
+                        interp_vals = interp_vals[0:xshp[0],0:xshp[1]]
+                    else:
                         interp_vals = interp_vals[0:xshp[0],0:xshp[1],0:xshp[2]]
                     dict_in['x_0']=interp_vals
                         
