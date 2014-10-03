@@ -50,6 +50,8 @@ class Preprocess(Section):
             if np.any(new_shape<input_shape):
                 crop_shape = np.min(np.vstack((new_shape,input_shape)),axis=0)
                 dict_in['x'] = crop_center(dict_in['x'], crop_shape)
+            else:
+                crop_shape = input_shape
             #padding    
             if np.any(new_shape>crop_shape):
                 pad_shape = np.max(np.vstack((new_shape,crop_shape)),axis=0)
