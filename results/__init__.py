@@ -13,4 +13,6 @@ from met_output_onedim import OutputOneDim
 from met_output_montage import OutputMontage
 from met_output_object import OutputObject
 from met_classification import ClassificationMetric
+from met_order_statistics import OrderStatistics
+from met_calc_scalar import CalcScalar
 from fmetrics import FMetrics

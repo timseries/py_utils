@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from scipy import misc
 import numpy as np
 from collections import OrderedDict
+from scipy.io import loadmat
 import os
 import csv
 import cPickle
@@ -114,11 +115,16 @@ class Input(Section):
             filehandler = open(filepath, 'rb') 
             file_data = cPickle.load(filehandler)
             filehandler.close()
-        elif str_extension == 'npz':
+        elif str_extension == 'npz':        
             member = self.filemember
             if not member:
                 member = 'arr_0'                
             file_data = np.load(self.filepath)[member]
+        elif str_extension == 'mat':
+            member = self.filemember
+            if not member:
+                member = 'arr_0'                
+            file_data = loadmat(self.filepath)[member]
         elif str_extension == 'json':
             raise ValueError('json not coded yet')
         elif str_extension == 'mnc':

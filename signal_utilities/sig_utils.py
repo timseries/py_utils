@@ -960,3 +960,7 @@ def pretty(d, indent=0):
       else:
          print '\t' * (indent+1) + str(value)
 
+def pretty2(d, indent=0):
+   for key, value in d.iteritems():
+      print '\t' * indent + str(key) + '\t' * (indent+1) + str(value)
+

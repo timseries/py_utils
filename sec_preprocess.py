@@ -54,6 +54,9 @@ class Preprocess(Section):
             if np.any(new_shape>crop_shape):
                 pad_shape = np.max(np.vstack((new_shape,crop_shape)),axis=0)
                 dict_in['x'] = pad_center(dict_in['x'], pad_shape)
+        # elif (self.str_type == 'superresolution'):
+        #     #need to crop edge of image to make results compatible with the literature
+            
         elif (self.str_type == 'phasevelocity'):
             mask_sec_in = self.get_val('masksectioninput',False)
             bmask_sec_in = self.get_val('boundarymasksectioninput',False)

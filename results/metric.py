@@ -60,7 +60,7 @@ class Metric(Section):
         self.xlabel = self.get_val('xlabel',False,None,False)    
         self.legend_pos = None
         if self.xlabel is None:
-            self.xlabel = r'Iteration'
+            self.xlabel = r'$n$'
         self.legend_cols = 1
         self.save_key = None
         self.last_frame_only = False
