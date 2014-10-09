@@ -123,6 +123,7 @@ class Observe(Section):
                 dict_in['x_0'] = real(ifftn(~H * dict_in['y'] /
                                             (H.get_spectrum_sq() + 
                                              wrf * noise_pars['variance'])))
+                # dict_in['x_0'] = real(ifftn(~H * dict_in['y'])) %testing only
                 H.set_output_fourier(False)
             #compute bsnr    
                 self.compute_bsnr(dict_in,noise_pars)
