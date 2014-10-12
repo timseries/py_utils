@@ -293,9 +293,11 @@ class WS(object):
         int_if_low = int_low_cplx * lgc_real + 1
         int_if_wav = int_wav_cplx * lgc_real + 1
         int_len_ws_vector = self.size*(int_if_wav)-(int_if_low==1)*(int_if_wav==2)*np.prod(self.ary_lowpass.size)
-        ws_vector_dtype='complex64'
+        # ws_vector_dtype='complex64'
+        ws_vector_dtype=self.tup_coeffs[0].dtype
         if lgc_real or not (int_low_cplx or int_wav_cplx):
-            ws_vector_dtype='float32'
+            # ws_vector_dtype='float32'
+            ws_vector_dtype=self.ary_lowpass.dtype
         if self.ws_vector == None or int_len_ws_vector!=self.ws_vector.size:
             self.ws_vector = np.zeros(int_len_ws_vector,dtype=ws_vector_dtype)
         int_stride = self.ary_lowpass.size*int_if_low
