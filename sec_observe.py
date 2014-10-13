@@ -173,10 +173,14 @@ class Observe(Section):
                             interp_vals = griddata(points,values,grids,method='cubic',fill_value=0.0)
                     else:    
                         values = dict_in['y'] #we're not using blank values, different interpolation scheme..
-                        interp_coords = iprod(*[np.arange(0,values.shape[j],
+                        dsfactors = np.asarray([int(D.ds_factor[j]) for j in xrange(values.ndim)])
+                        valshpcorrect = (np.asarray(values.shape) - np.asarray(xshp,dtype='uint8')/dsfactors)
+                        valshpcorrect = valshpcorrect/np.asarray(dsfactors,dtype='float32')
+                        interp_coords = iprod(*[np.arange(0,values.shape[j]-valshpcorrect[j],
                                                           1.0/D.ds_factor[j]) for j in xrange(values.ndim)])
                         interp_coords = np.array([el for el in interp_coords]).transpose()
                         interp_vals = map_coordinates(values,interp_coords,order=3,mode='nearest').reshape(xshp)
+                        # interp_vals = map_coordinates(values,interp_coords,order=3,mode='nearest')
                         # cut off the edges
                         # if xdim == 2:
                         # interp_vals = interp_vals[0:xshp[0],0:xshp[1]]
