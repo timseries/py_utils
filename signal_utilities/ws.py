@@ -157,7 +157,7 @@ class WS(object):
         return WS(np.abs(self.ary_lowpass),np.abs(self.tup_coeffs))
     
     def energy(self):
-        """Takes the modulus across all of the subands, and returns a new WS object
+        """Takes the energy across all of the subands, and returns a new WS object
         """
         return WS(np.abs(self.ary_lowpass)**2,tuple([np.abs(ary_coeffs)**2 for ary_coeffs in self.tup_coeffs]))
 
