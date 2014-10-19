@@ -1,6 +1,9 @@
 #!/usr/bin/python -tt
 import numpy as np
 from libtiff import TIFF as tif
+#headless imshow
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import png
 from PIL import Image
