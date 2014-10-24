@@ -10,7 +10,7 @@ from PIL import Image
 from mpldatacursor import datacursor
 import os
 import copy
-
+from tempfile import TemporaryFile
 from py_utils.results.metric import Metric
 from py_utils.results.defaults import DEFAULT_SLICE,DEFAULT_IMAGE_EXT
 
@@ -146,6 +146,10 @@ class OutputImage(Metric):
                     cb = fig.colorbar(img)
                     # cb.set_clim(self.input_range[0],self.input_range[1])
                 plt.savefig(strSavePath, format="eps",bbox_inches='tight')
+            elif self.output_extension=='npz':
+                f = open(strSavePath,'wb')
+                np.savez(f, arr_0=frame[self.slices])
+                f.close()
             elif self.output_extension=='tif':
                 output = tif.open(strSavePath, mode='w')
                 #saving as tiff

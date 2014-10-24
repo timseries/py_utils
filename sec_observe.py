@@ -115,6 +115,7 @@ class Observe(Section):
         ################################################
         if self.str_type == 'convolution':
                 H = self.Phi
+                
                 H.set_output_fourier(False)
                 dict_in['Hx'] = H * dict_in['x']
                 dict_in['y'] = dict_in['Hx']+dict_in['n']
@@ -174,7 +175,7 @@ class Observe(Section):
                     else:    
                         values = dict_in['y'] #we're not using blank values, different interpolation scheme..
                         dsfactors = np.asarray([int(D.ds_factor[j]) for j in xrange(values.ndim)])
-                        valshpcorrect = (np.asarray(values.shape) - np.asarray(xshp,dtype='uint8')/dsfactors)
+                        valshpcorrect = (np.asarray(values.shape) - np.asarray(xshp,dtype='uint16')/dsfactors)
                         valshpcorrect = valshpcorrect/np.asarray(dsfactors,dtype='float32')
                         interp_coords = iprod(*[np.arange(0,values.shape[j]-valshpcorrect[j],
                                                           1.0/D.ds_factor[j]) for j in xrange(values.ndim)])
