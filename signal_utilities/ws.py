@@ -224,6 +224,9 @@ class WS(object):
         else:
             return WS(self.ary_lowpass / divisor, tuple(np.array(self.tup_coeffs) / divisor))
         
+    def __pow__(self,power):
+        return WS(self.ary_lowpass**power, tuple(np.array(self.tup_coeffs)**power))
+        
     def invert(self):
         return WS(1.0/self.ary_lowpass,tuple(1.0/np.array(self.tup_coeffs)))
         
