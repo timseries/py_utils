@@ -105,7 +105,7 @@ class Preprocess(Section):
                 #Compute phase differences between the two frames
                 diff_method = self.get_val('phasedifferencemethod')
                 if diff_method == 'conjugateproduct':
-                    new_x = (dict_in['x'][:,:,frame_order[0]] * 
+                    new_x = np.sqrt(dict_in['x'][:,:,frame_order[0]] * 
                              conj(dict_in['x'][:,:,frame_order[1]]))
                     theta = angle(new_x)
                     magnitude = sqrt(abs(new_x));

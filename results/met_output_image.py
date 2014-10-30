@@ -115,10 +115,12 @@ class OutputImage(Metric):
             strSavePath = strPath + str(ix_offset+ix) + '.' + self.output_extension
             write_data = frame[self.slices]
             #clip the output range to the input range
+            # if self.str_section=='OutputImage5':
+            #     pdb.set_trace()
             write_data[write_data<self.input_range[0]]=self.input_range[0]
             write_data[write_data>self.input_range[1]]=self.input_range[1]
-            #shift in the case of a negative lower limit (can't have negative intensities)
-            if self.input_range[0]<0:
+            #shift in the case of a negative lower limit (can't have negative pixel vals)
+            if self.input_range[0]<0 and self.output_extension=='png':
                 write_data+=np.abs(self.input_range[0])
             #double precision is memory consumptive
             write_data=np.asarray(write_data,dtype='float32')
