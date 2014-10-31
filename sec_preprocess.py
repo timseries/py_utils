@@ -85,7 +85,7 @@ class Preprocess(Section):
                 sec_bmask_in = sf.create_section(self.get_params(),bmask_sec_in)
                 dict_in['boundarymask'] = np.asarray(sec_bmask_in.read(dict_in, True), dtype='bool')
             else:
-                dict_in['boundarymask'] = False
+                dict_in['boundarymask'] = np.asarray(np.zeros(dict_in['x'][:,:,0].shape),dtype='bool')
 
             if self.get_val('nmracquisition',True): #compute phase from lab measurement
                 #The frame ordering determines in which direction to compute the 
@@ -94,7 +94,6 @@ class Preprocess(Section):
                 frame_order = [0, 1]
                 if self.get_val('reverseframeorder'):
                     frame_order = [1, 0]
-
                 #Fully sampled fourier transform in order to extract phase data
                 for frame in xrange(2):
                     dict_in['x'][:,:,frame]=fftn(fftshift(dict_in['x'][:,:,frame]))
@@ -105,17 +104,23 @@ class Preprocess(Section):
                 #Compute phase differences between the two frames
                 diff_method = self.get_val('phasedifferencemethod')
                 if diff_method == 'conjugateproduct':
-                    new_x = np.sqrt(dict_in['x'][:,:,frame_order[0]] * 
-                             conj(dict_in['x'][:,:,frame_order[1]]))
+                    new_x = (dict_in['x'][:,:,frame_order[1]] * 
+                             conj(dict_in['x'][:,:,frame_order[0]]))
                     theta = angle(new_x)
-                    magnitude = sqrt(abs(new_x));
+                    theta +=np.max(np.abs(theta))
+                    # theta /= np.max(np.abs(theta))
+                    # theata *= np.pi*2
+                    magnitude = sqrt(abs(new_x))
 
                 elif diff_method == 'subtraction':
-                    theta = (angle(dict_in['x'][:,:,frame_order[0]]) - 
-                             angle(dict_in['x'][:,:,frame_order[1]]))
+                    theta = (angle(dict_in['x'][:,:,frame_order[1]]) - 
+                             angle(dict_in['x'][:,:,frame_order[0]]))
                     magnitude = 0.5*(np.abs(dict_in['x'][:,:,frame_order[0]])
                                      + np.abs(dict_in['x'][:,:,frame_order[1]]))
-                    new_x = magnitude*exp(1j*theta)
+                # if self.get_val('reverseframeorder'):
+                #     theta = -theta
+                #     theta+=np.abs(np.min(theta))
+                new_x = magnitude*exp(1j*theta)
                     
             else: #synthetic data
                 theta = angle(dict_in['x'])
@@ -130,6 +135,7 @@ class Preprocess(Section):
             dict_global_lims['upperlimit'] = self.get_val('phaseupperlimit',True)
             dict_global_lims['boundary_mask'] = dict_in['boundarymask']
             dict_global_lims['boundary_upperlimit'] = self.get_val('boundaryphaseupperlimit',True)
+            dict_global_lims['boundaryoverlapvcorrects'] = self.get_val('boundaryoverlapvcorrects',True)
             
             theta = phase_unwrap(theta, dict_global_lims, ls_local_lim_secs)
             magnitude /= np.max(nabs(magnitude))

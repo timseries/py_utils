@@ -83,7 +83,7 @@ class OutputImage(Metric):
         if self.data[-1].ndim==2:
             plt.figure(self.figure_number)
             plt.imshow(self.data[-1][self.slices],cmap=self.cmap, 
-                       vmin=self.input_range[0],vmax=self.input_range[1])#,interpolation="none")
+                       vmin=self.input_range[0],vmax=self.input_range[1],interpolation="none")
             if self.get_val('colorbar',True):
                 cb = plt.colorbar()
                 # cb.set_clim(self.input_range[0],self.input_range[1])
