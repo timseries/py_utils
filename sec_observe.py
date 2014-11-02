@@ -216,8 +216,9 @@ class Observe(Section):
                 noise_distn2 = self.get_val('noisedistribution2',False)
                 noise_pars['distribution'] = noise_distn2
                 #generating quantized (uint16) poisson measurements
-                dict_in['y'] = (noise_gen(noise_pars)
-                                ).astype('uint16').astype('int32')
+                # dict_in['y'] = (noise_gen(noise_pars)+dict_in['n']).astype('uint16').astype('int32')
+                dict_in['y'] = noise_gen(noise_pars)+dict_in['n']
+                dict_in['y'][dict_in['y']<0]=0
             elif str_domain == 'evaluation': #are given the observation, which is stored in 'x'
                 dict_in['y'] = dict_in.pop('x')
             else:
