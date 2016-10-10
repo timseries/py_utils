@@ -3,10 +3,6 @@
 """
 __author__ = "unkonwn"
 
-import bisect
-import itertools
-import operator
-
 class _BNode(object):
 	__slots__ = ["tree", "contents", "children"]
 

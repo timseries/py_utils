@@ -6,7 +6,7 @@ from numpy import arange, asarray, ndarray
 from scipy.constants.constants import pi
 from scipy.signal import convolve2d
 
-import ImageOps
+from PIL import ImageOps
 
 from py_utils.results.metric import Metric
 from py_utils.signal_utilities.sig_utils import noise_gen, crop_center,gaussian
